@@ -91,7 +91,7 @@ func main() {
 		}
 
 		for _, b := range buff[:n] {
-			parser.Next(b)
+			parser.Advance(b)
 		}
 	}
 }
