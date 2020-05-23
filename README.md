@@ -41,8 +41,8 @@ import (
 
 type dispatcher struct{}
 
-func (p *dispatcher) Print(char uint32) {
-	fmt.Printf("[Print] %c\n", char)
+func (p *dispatcher) Print(r rune) {
+	fmt.Printf("[Print] %c\n", r)
 }
 
 func (p *dispatcher) Execute(b byte) {
@@ -57,16 +57,16 @@ func (p *dispatcher) Unhook() {
 	fmt.Printf("[Unhook]\n")
 }
 
-func (p *dispatcher) Hook(params []int64, intermediates []byte, ignore bool, char uint32) {
-	fmt.Printf("[Hook] params=%v, intermediates=%v, ignore=%v, char=%c\n", params, intermediates, ignore, char)
+func (p *dispatcher) Hook(params []int64, intermediates []byte, ignore bool, r rune) {
+	fmt.Printf("[Hook] params=%v, intermediates=%v, ignore=%v, r=%v\n", params, intermediates, ignore, r)
 }
 
 func (p *dispatcher) OscDispatch(params [][]byte, bellTerminated bool) {
 	fmt.Printf("[OscDispatch] params=%v, bellTerminated=%v\n", params, bellTerminated)
 }
 
-func (p *dispatcher) CsiDispatch(params []int64, intermediates []byte, ignore bool, char uint32) {
-	fmt.Printf("[CsiDispatch] params=%v, intermediates=%v, ignore=%v, char=%v\n", params, intermediates, ignore, char)
+func (p *dispatcher) CsiDispatch(params []int64, intermediates []byte, ignore bool, r rune) {
+	fmt.Printf("[CsiDispatch] params=%v, intermediates=%v, ignore=%v, r=%v\n", params, intermediates, ignore, r)
 }
 
 func (p *dispatcher) EscDispatch(intermediates []byte, ignore bool, b byte) {
@@ -95,6 +95,7 @@ func main() {
 		}
 	}
 }
+
 ```
 
 

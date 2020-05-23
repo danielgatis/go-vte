@@ -31,7 +31,7 @@ func (p *dispatcher) Unhook() {
 }
 
 func (p *dispatcher) Hook(params []int64, intermediates []byte, ignore bool, r rune) {
-	fmt.Printf("[Hook] params=%v, intermediates=%v, ignore=%v, r=%c\n", params, intermediates, ignore, r)
+	fmt.Printf("[Hook] params=%v, intermediates=%v, ignore=%v, r=%v\n", params, intermediates, ignore, r)
 }
 
 func (p *dispatcher) OscDispatch(params [][]byte, bellTerminated bool) {
@@ -39,7 +39,7 @@ func (p *dispatcher) OscDispatch(params [][]byte, bellTerminated bool) {
 }
 
 func (p *dispatcher) CsiDispatch(params []int64, intermediates []byte, ignore bool, r rune) {
-	fmt.Printf("[CsiDispatch] params=%v, intermediates=%v, ignore=%v, r=%c\n", params, intermediates, ignore, r)
+	fmt.Printf("[CsiDispatch] params=%v, intermediates=%v, ignore=%v, r=%v\n", params, intermediates, ignore, r)
 }
 
 func (p *dispatcher) EscDispatch(intermediates []byte, ignore bool, b byte) {
