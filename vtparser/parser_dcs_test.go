@@ -11,11 +11,11 @@ type dcsDispatcher struct {
 	intermediates []byte
 	params        []int64
 	ignore        bool
-	char          uint32
+	r             rune
 	s             []byte
 }
 
-func (p *dcsDispatcher) Print(char uint32) {}
+func (p *dcsDispatcher) Print(r rune) {}
 
 func (p *dcsDispatcher) Execute(b byte) {}
 
@@ -27,17 +27,17 @@ func (p *dcsDispatcher) Unhook() {
 	p.dispatched = true
 }
 
-func (p *dcsDispatcher) Hook(params []int64, intermediates []byte, ignore bool, char uint32) {
+func (p *dcsDispatcher) Hook(params []int64, intermediates []byte, ignore bool, r rune) {
 	p.intermediates = intermediates
 	p.params = params
 	p.ignore = ignore
-	p.char = char
+	p.r = r
 	p.dispatched = true
 }
 
 func (p *dcsDispatcher) OscDispatch(params [][]byte, bellTerminated bool) {}
 
-func (p *dcsDispatcher) CsiDispatch(params []int64, intermediates []byte, ignore bool, char uint32) {}
+func (p *dcsDispatcher) CsiDispatch(params []int64, intermediates []byte, ignore bool, r rune) {}
 
 func (p *dcsDispatcher) EscDispatch(intermediates []byte, ignore bool, b byte) {}
 
@@ -84,6 +84,6 @@ func TestDcsParse(t *testing.T) {
 
 	assert.True(t, dispatcher.dispatched)
 	assert.Equal(t, []int64([]int64{0, 1}), dispatcher.params)
-	assert.Equal(t, uint32('|'), dispatcher.char)
+	assert.Equal(t, rune('|'), dispatcher.r)
 	assert.Equal(t, []byte("17/ab"), dispatcher.s)
 }

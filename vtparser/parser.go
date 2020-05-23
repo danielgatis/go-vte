@@ -18,13 +18,13 @@ const maxParams = 16
 
 // Dispatcher dispatcher
 type Dispatcher interface {
-	Print(char uint32)
+	Print(char rune)
 	Execute(b byte)
 	Put(b byte)
 	Unhook()
-	Hook(params []int64, intermediates []byte, ignore bool, action uint32)
+	Hook(params []int64, intermediates []byte, ignore bool, r rune)
 	OscDispatch(params [][]byte, bellTerminated bool)
-	CsiDispatch(params []int64, intermediates []byte, ignore bool, action uint32)
+	CsiDispatch(params []int64, intermediates []byte, ignore bool, r rune)
 	EscDispatch(intermediates []byte, ignore bool, b byte)
 }
 
@@ -52,8 +52,8 @@ func New(dispatcher Dispatcher) *Parser {
 	}
 
 	p.utf8Parser = utf8.New(
-		func(char uint32) {
-			p.dispatcher.Print(char)
+		func(r rune) {
+			p.dispatcher.Print(r)
 			p.state = groundState
 		},
 
@@ -149,7 +149,7 @@ func (p *Parser) performAction(action, b byte) {
 		break
 
 	case printAction:
-		p.dispatcher.Print(uint32(b))
+		p.dispatcher.Print(rune(b))
 
 	case executeAction:
 		p.dispatcher.Execute(b)
@@ -166,7 +166,7 @@ func (p *Parser) performAction(action, b byte) {
 			p.Params(),
 			p.Intermediates(),
 			p.ignoring,
-			uint32(b),
+			rune(b),
 		)
 
 	case putAction:
@@ -234,7 +234,7 @@ func (p *Parser) performAction(action, b byte) {
 			p.Params(),
 			p.Intermediates(),
 			p.ignoring,
-			uint32(b),
+			rune(b),
 		)
 
 	case escDispatchAction:

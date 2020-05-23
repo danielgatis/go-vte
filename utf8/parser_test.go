@@ -11,8 +11,8 @@ func TestParser(t *testing.T) {
 	output := ""
 
 	parser := New(
-		func(char uint32) {
-			output = output + string(char)
+		func(r rune) {
+			output = output + string(r)
 		},
 
 		func() {

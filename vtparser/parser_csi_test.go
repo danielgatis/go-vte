@@ -14,7 +14,7 @@ type csiDispatcher struct {
 	ignore        bool
 }
 
-func (p *csiDispatcher) Print(char uint32) {}
+func (p *csiDispatcher) Print(r rune) {}
 
 func (p *csiDispatcher) Execute(b byte) {}
 
@@ -22,11 +22,11 @@ func (p *csiDispatcher) Put(b byte) {}
 
 func (p *csiDispatcher) Unhook() {}
 
-func (p *csiDispatcher) Hook(params []int64, intermediates []byte, ignore bool, char uint32) {}
+func (p *csiDispatcher) Hook(params []int64, intermediates []byte, ignore bool, r rune) {}
 
 func (p *csiDispatcher) OscDispatch(params [][]byte, bellTerminated bool) {}
 
-func (p *csiDispatcher) CsiDispatch(params []int64, intermediates []byte, ignore bool, char uint32) {
+func (p *csiDispatcher) CsiDispatch(params []int64, intermediates []byte, ignore bool, r rune) {
 	p.intermediates = intermediates
 	p.params = params
 	p.ignore = ignore

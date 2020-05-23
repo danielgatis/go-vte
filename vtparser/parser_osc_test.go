@@ -12,7 +12,7 @@ type oscDispatcher struct {
 	params         [][]byte
 }
 
-func (p *oscDispatcher) Print(char uint32) {}
+func (p *oscDispatcher) Print(r rune) {}
 
 func (p *oscDispatcher) Execute(b byte) {}
 
@@ -20,7 +20,7 @@ func (p *oscDispatcher) Put(b byte) {}
 
 func (p *oscDispatcher) Unhook() {}
 
-func (p *oscDispatcher) Hook(params []int64, intermediates []byte, ignore bool, char uint32) {}
+func (p *oscDispatcher) Hook(params []int64, intermediates []byte, ignore bool, r rune) {}
 
 func (p *oscDispatcher) OscDispatch(params [][]byte, bellTerminated bool) {
 	p.dispatched = true
@@ -28,7 +28,7 @@ func (p *oscDispatcher) OscDispatch(params [][]byte, bellTerminated bool) {
 	p.params = params
 }
 
-func (p *oscDispatcher) CsiDispatch(params []int64, intermediates []byte, ignore bool, char uint32) {}
+func (p *oscDispatcher) CsiDispatch(params []int64, intermediates []byte, ignore bool, r rune) {}
 
 func (p *oscDispatcher) EscDispatch(intermediates []byte, ignore bool, b byte) {}
 

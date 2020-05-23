@@ -1,6 +1,6 @@
 package utf8
 
-const continuationMask byte = 0b0011_1111
+const continuationMask byte = 0x3f
 
 // State represents a state type
 type State = byte
@@ -8,12 +8,12 @@ type State = byte
 // Action represents a action type
 type Action = byte
 
-type codePointCallback func(char uint32)
+type codePointCallback func(r rune)
 type invalidSequenceCallback func()
 
 // Parser represents a state machine
 type Parser struct {
-	codepoint uint32
+	codepoint rune
 	state     State
 	ccb       codePointCallback
 	icb       invalidSequenceCallback
@@ -40,7 +40,7 @@ func (p *Parser) Advance(b byte) {
 }
 
 // Codepoint returns a codepoint
-func (p *Parser) Codepoint() uint32 {
+func (p *Parser) Codepoint() rune {
 	return p.codepoint
 }
 
@@ -61,26 +61,26 @@ func (p *Parser) performAction(action, b byte) {
 		p.icb()
 
 	case emitByteAction:
-		p.ccb(uint32(b))
+		p.ccb(rune(b))
 
 	case setByte1Action:
-		point := p.codepoint | uint32(b&continuationMask)
+		point := p.codepoint | rune(b&continuationMask)
 		p.codepoint = 0
 		p.ccb(point)
 
 	case setByte2Action:
-		p.codepoint = p.codepoint | uint32((b&continuationMask))<<6
+		p.codepoint = p.codepoint | rune((b&continuationMask))<<6
 
 	case setByte2TopAction:
-		p.codepoint = p.codepoint | uint32((b&0b0001_1111))<<6
+		p.codepoint = p.codepoint | rune((b&0x1f))<<6
 
 	case setByte3Action:
-		p.codepoint = p.codepoint | uint32((b&continuationMask))<<12
+		p.codepoint = p.codepoint | rune((b&continuationMask))<<12
 
 	case setByte3TopAction:
-		p.codepoint = p.codepoint | uint32((b&0b0000_1111))<<12
+		p.codepoint = p.codepoint | rune((b&0x0f))<<12
 
 	case setByte4Action:
-		p.codepoint = p.codepoint | uint32((b&0b0000_0111))<<18
+		p.codepoint = p.codepoint | rune((b&0x07))<<18
 	}
 }

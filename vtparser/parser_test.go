@@ -10,7 +10,7 @@ import (
 
 type benchDispatcher struct{}
 
-func (p *benchDispatcher) Print(char uint32) {}
+func (p *benchDispatcher) Print(r rune) {}
 
 func (p *benchDispatcher) Execute(b byte) {}
 
@@ -18,11 +18,11 @@ func (p *benchDispatcher) Put(b byte) {}
 
 func (p *benchDispatcher) Unhook() {}
 
-func (p *benchDispatcher) Hook(params []int64, intermediates []byte, ignore bool, char uint32) {}
+func (p *benchDispatcher) Hook(params []int64, intermediates []byte, ignore bool, r rune) {}
 
 func (p *benchDispatcher) OscDispatch(params [][]byte, bellTerminated bool) {}
 
-func (p *benchDispatcher) CsiDispatch(params []int64, intermediates []byte, ignore bool, char uint32) {
+func (p *benchDispatcher) CsiDispatch(params []int64, intermediates []byte, ignore bool, r rune) {
 }
 
 func (p *benchDispatcher) EscDispatch(intermediates []byte, ignore bool, b byte) {}

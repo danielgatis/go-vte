@@ -13,7 +13,7 @@ type ecsDispatcher struct {
 	ignore        bool
 }
 
-func (p *ecsDispatcher) Print(char uint32) {}
+func (p *ecsDispatcher) Print(r rune) {}
 
 func (p *ecsDispatcher) Execute(b byte) {}
 
@@ -21,11 +21,11 @@ func (p *ecsDispatcher) Put(b byte) {}
 
 func (p *ecsDispatcher) Unhook() {}
 
-func (p *ecsDispatcher) Hook(params []int64, intermediates []byte, ignore bool, char uint32) {}
+func (p *ecsDispatcher) Hook(params []int64, intermediates []byte, ignore bool, r rune) {}
 
 func (p *ecsDispatcher) OscDispatch(params [][]byte, bellTerminated bool) {}
 
-func (p *ecsDispatcher) CsiDispatch(params []int64, intermediates []byte, ignore bool, char uint32) {}
+func (p *ecsDispatcher) CsiDispatch(params []int64, intermediates []byte, ignore bool, r rune) {}
 
 func (p *ecsDispatcher) EscDispatch(intermediates []byte, ignore bool, b byte) {
 	p.intermediates = intermediates
