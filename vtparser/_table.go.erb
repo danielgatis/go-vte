@@ -19,12 +19,6 @@ var (
     <% end -%>
   }
 
-  actionNames = []string{
-    <% action_names.each do |name| -%>
-      "<%= name %>Action",
-    <% end -%>
-  }
-
   stateTable = [][]byte{
     <% table.each.with_index do |actions, i| -%>
       { //State <%= state_names[i] %>State = <%= i %>

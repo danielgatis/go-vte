@@ -58,25 +58,6 @@ var (
 		"utf8State",
 	}
 
-	actionNames = []string{
-		"noneAction",
-		"clearAction",
-		"collectAction",
-		"csiDispatchAction",
-		"escDispatchAction",
-		"executeAction",
-		"hookAction",
-		"ignoreAction",
-		"oscEndAction",
-		"oscPutAction",
-		"oscStartAction",
-		"paramAction",
-		"printAction",
-		"putAction",
-		"unhookAction",
-		"beginUtf8Action",
-	}
-
 	stateTable = [][]byte{
 		{ //State anywhereState = 0
 			0,                                  // 00

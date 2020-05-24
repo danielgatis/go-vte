@@ -36,7 +36,16 @@ func BenchmarkNext(bm *testing.B) {
 
 	bm.ResetTimer()
 	dispatcher := &benchDispatcher{}
-	parser := New(dispatcher)
+	parser := New(
+		dispatcher.Print,
+		dispatcher.Execute,
+		dispatcher.Put,
+		dispatcher.Unhook,
+		dispatcher.Hook,
+		dispatcher.OscDispatch,
+		dispatcher.CsiDispatch,
+		dispatcher.EscDispatch,
+	)
 
 	for _, b := range bytes {
 		parser.Advance(b)

@@ -41,7 +41,16 @@ func TestOsc(t *testing.T) {
 	}
 
 	dispatcher := &oscDispatcher{}
-	parser := New(dispatcher)
+	parser := New(
+		dispatcher.Print,
+		dispatcher.Execute,
+		dispatcher.Put,
+		dispatcher.Unhook,
+		dispatcher.Hook,
+		dispatcher.OscDispatch,
+		dispatcher.CsiDispatch,
+		dispatcher.EscDispatch,
+	)
 
 	for _, b := range oscBytes {
 		parser.Advance(b)
@@ -56,7 +65,16 @@ func TestOsc(t *testing.T) {
 
 func TestEmptyOsc(t *testing.T) {
 	dispatcher := &oscDispatcher{}
-	parser := New(dispatcher)
+	parser := New(
+		dispatcher.Print,
+		dispatcher.Execute,
+		dispatcher.Put,
+		dispatcher.Unhook,
+		dispatcher.Hook,
+		dispatcher.OscDispatch,
+		dispatcher.CsiDispatch,
+		dispatcher.EscDispatch,
+	)
 
 	for _, b := range []byte{0x1b, 0x5d, 0x07} {
 		parser.Advance(b)
@@ -70,7 +88,16 @@ func TestEmptyOsc(t *testing.T) {
 
 func TestOscMaxParams(t *testing.T) {
 	dispatcher := &oscDispatcher{}
-	parser := New(dispatcher)
+	parser := New(
+		dispatcher.Print,
+		dispatcher.Execute,
+		dispatcher.Put,
+		dispatcher.Unhook,
+		dispatcher.Hook,
+		dispatcher.OscDispatch,
+		dispatcher.CsiDispatch,
+		dispatcher.EscDispatch,
+	)
 
 	for _, b := range []byte("\x1b];;;;;;;;;;;;;;;;;\x1b") {
 		parser.Advance(b)
@@ -88,7 +115,16 @@ func TestOscMaxParams(t *testing.T) {
 
 func TestOscBellTerminated(t *testing.T) {
 	dispatcher := &oscDispatcher{}
-	parser := New(dispatcher)
+	parser := New(
+		dispatcher.Print,
+		dispatcher.Execute,
+		dispatcher.Put,
+		dispatcher.Unhook,
+		dispatcher.Hook,
+		dispatcher.OscDispatch,
+		dispatcher.CsiDispatch,
+		dispatcher.EscDispatch,
+	)
 
 	for _, b := range []byte("\x1b]11;ff/00/ff\x07") {
 		parser.Advance(b)
@@ -100,7 +136,16 @@ func TestOscBellTerminated(t *testing.T) {
 
 func TestOscC0StTerminated(t *testing.T) {
 	dispatcher := &oscDispatcher{}
-	parser := New(dispatcher)
+	parser := New(
+		dispatcher.Print,
+		dispatcher.Execute,
+		dispatcher.Put,
+		dispatcher.Unhook,
+		dispatcher.Hook,
+		dispatcher.OscDispatch,
+		dispatcher.CsiDispatch,
+		dispatcher.EscDispatch,
+	)
 
 	for _, b := range []byte("\x1b]11;ff/00/ff\x1b\\") {
 		parser.Advance(b)
@@ -118,7 +163,16 @@ func TestOscWithUTF8Arguments(t *testing.T) {
 	}
 
 	dispatcher := &oscDispatcher{}
-	parser := New(dispatcher)
+	parser := New(
+		dispatcher.Print,
+		dispatcher.Execute,
+		dispatcher.Put,
+		dispatcher.Unhook,
+		dispatcher.Hook,
+		dispatcher.OscDispatch,
+		dispatcher.CsiDispatch,
+		dispatcher.EscDispatch,
+	)
 
 	for _, b := range bytes {
 		parser.Advance(b)
@@ -132,7 +186,16 @@ func TestOscContainingStringTerminator(t *testing.T) {
 	bytes := []byte("\x1b]2;\xe6\x9c\xab\x1b\\")
 
 	dispatcher := &oscDispatcher{}
-	parser := New(dispatcher)
+	parser := New(
+		dispatcher.Print,
+		dispatcher.Execute,
+		dispatcher.Put,
+		dispatcher.Unhook,
+		dispatcher.Hook,
+		dispatcher.OscDispatch,
+		dispatcher.CsiDispatch,
+		dispatcher.EscDispatch,
+	)
 
 	for _, b := range bytes {
 		parser.Advance(b)
@@ -147,7 +210,16 @@ func TestOcsExceedMaxBufferSize(t *testing.T) {
 	inputEnd := []byte{0x07}
 
 	dispatcher := &oscDispatcher{}
-	parser := New(dispatcher)
+	parser := New(
+		dispatcher.Print,
+		dispatcher.Execute,
+		dispatcher.Put,
+		dispatcher.Unhook,
+		dispatcher.Hook,
+		dispatcher.OscDispatch,
+		dispatcher.CsiDispatch,
+		dispatcher.EscDispatch,
+	)
 
 	for _, b := range inputStart {
 		parser.Advance(b)

@@ -16,17 +16,14 @@ const maxIntermediates = 2
 const maxOscRaw = 1024
 const maxParams = 16
 
-// Dispatcher dispatcher
-type Dispatcher interface {
-	Print(char rune)
-	Execute(b byte)
-	Put(b byte)
-	Unhook()
-	Hook(params []int64, intermediates []byte, ignore bool, r rune)
-	OscDispatch(params [][]byte, bellTerminated bool)
-	CsiDispatch(params []int64, intermediates []byte, ignore bool, r rune)
-	EscDispatch(intermediates []byte, ignore bool, b byte)
-}
+type printCallback func(char rune)
+type execCallback func(b byte)
+type putCallback func(b byte)
+type unhookCallback func()
+type hookCallback func(params []int64, intermediates []byte, ignore bool, r rune)
+type oscCallback func(params [][]byte, bellTerminated bool)
+type csiCallback func(params []int64, intermediates []byte, ignore bool, r rune)
+type escCallback func(intermediates []byte, ignore bool, b byte)
 
 // Parser represents a state machine.
 type Parser struct {
@@ -41,24 +38,49 @@ type Parser struct {
 	oscNumParams    int
 	ignoring        bool
 	utf8Parser      *utf8.Parser
-	dispatcher      Dispatcher
+
+	prtcb printCallback
+	execb execCallback
+	putcb putCallback
+	uhocb unhookCallback
+	hokcb hookCallback
+	osccb oscCallback
+	csicb csiCallback
+	esccb escCallback
 }
 
 // New returns a new parser.
-func New(dispatcher Dispatcher) *Parser {
+func New(
+	prtcb printCallback,
+	execb execCallback,
+	putcb putCallback,
+	uhocb unhookCallback,
+	hokcb hookCallback,
+	osccb oscCallback,
+	csicb csiCallback,
+	esccb escCallback,
+) *Parser {
 	p := &Parser{
-		state:      groundState,
-		dispatcher: dispatcher,
+		state: groundState,
+
+		prtcb: prtcb,
+		execb: execb,
+		putcb: putcb,
+		uhocb: uhocb,
+		hokcb: hokcb,
+		osccb: osccb,
+		csicb: csicb,
+		esccb: esccb,
 	}
 
 	p.utf8Parser = utf8.New(
 		func(r rune) {
-			p.dispatcher.Print(r)
+			p.prtcb(r)
 			p.state = groundState
 		},
 
 		func() {
-			p.dispatcher.Print('�')
+			p.prtcb('�')
 			p.state = groundState
 		},
 	)
@@ -149,10 +171,10 @@ func (p *Parser) performAction(action, b byte) {
 		break
 
 	case printAction:
-		p.dispatcher.Print(rune(b))
+		p.prtcb(rune(b))
 
 	case executeAction:
-		p.dispatcher.Execute(b)
+		p.execb(b)
 
 	case hookAction:
 		if p.numParams == maxParams {
@@ -162,7 +184,7 @@ func (p *Parser) performAction(action, b byte) {
 			p.numParams++
 		}
 
-		p.dispatcher.Hook(
+		p.hokcb(
 			p.Params(),
 			p.Intermediates(),
 			p.ignoring,
@@ -170,7 +192,7 @@ func (p *Parser) performAction(action, b byte) {
 		)
 
 	case putAction:
-		p.dispatcher.Put(b)
+		p.putcb(b)
 
 	case oscStartAction:
 		p.oscRaw = make([]byte, 0)
@@ -214,13 +236,13 @@ func (p *Parser) performAction(action, b byte) {
 			p.oscNumParams++
 		}
 
-		p.dispatcher.OscDispatch(
+		p.osccb(
 			p.OscParams(),
 			b == 0x07,
 		)
 
 	case unhookAction:
-		p.dispatcher.Unhook()
+		p.uhocb()
 
 	case csiDispatchAction:
 		if p.numParams == maxParams {
@@ -230,7 +252,7 @@ func (p *Parser) performAction(action, b byte) {
 			p.numParams++
 		}
 
-		p.dispatcher.CsiDispatch(
+		p.csicb(
 			p.Params(),
 			p.Intermediates(),
 			p.ignoring,
@@ -238,7 +260,7 @@ func (p *Parser) performAction(action, b byte) {
 		)
 
 	case escDispatchAction:
-		p.dispatcher.EscDispatch(
+		p.esccb(
 			p.Intermediates(),
 			p.ignoring,
 			b,

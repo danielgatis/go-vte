@@ -75,7 +75,18 @@ func (p *dispatcher) EscDispatch(intermediates []byte, ignore bool, b byte) {
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
-	parser := vtparser.New(&dispatcher{})
+	dispatcher := &dispatcher{}
+	parser := vtparser.New(
+		dispatcher.Print,
+		dispatcher.Execute,
+		dispatcher.Put,
+		dispatcher.Unhook,
+		dispatcher.Hook,
+		dispatcher.OscDispatch,
+		dispatcher.CsiDispatch,
+		dispatcher.EscDispatch,
+	)
+	
 	buff := make([]byte, 2048)
 
 	for {

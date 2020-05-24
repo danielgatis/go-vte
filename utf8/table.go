@@ -34,17 +34,6 @@ var (
 		"utf843f4State",
 	}
 
-	actionNames = []string{
-		"invalidSequenceAction",
-		"emitByteAction",
-		"setByte1Action",
-		"setByte2Action",
-		"setByte2TopAction",
-		"setByte3Action",
-		"setByte3TopAction",
-		"setByte4Action",
-	}
-
 	stateTable = [][]byte{
 		{ //State groundState = 0
 			groundState | (emitByteAction << 4),        // 00
