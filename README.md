@@ -1,9 +1,10 @@
-# go-vte
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/danielgatis/go-vte?style=flat-square)](https://goreportcard.com/report/github.com/danielgatis/go-vte)
 [![License MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/danielgatis/go-vte/master/LICENSE)
 [![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/danielgatis/go-vte)
 [![Release](https://img.shields.io/github/release/danielgatis/go-vte.svg?style=flat-square)](https://github.com/danielgatis/go-vte/releases/latest)
+
+# go-vte
 
 A GO version of https://github.com/alacritty/vte.
 
