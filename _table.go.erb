@@ -1,4 +1,4 @@
-package vtparser
+package vte
 
 // THIS FILE WAS AUTO-GENERATED. DO NOT MODIFY.
 

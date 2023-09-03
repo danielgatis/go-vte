@@ -1,4 +1,4 @@
-package vtparser
+package vte
 
 // THIS FILE WAS AUTO-GENERATED. DO NOT MODIFY.
 
@@ -376,7 +376,7 @@ var (
 			csiParamState | (paramAction << 4),          // 37
 			csiParamState | (paramAction << 4),          // 38
 			csiParamState | (paramAction << 4),          // 39
-			csiIgnoreState | (noneAction << 4),          // 3A
+			csiParamState | (paramAction << 4),          // 3A
 			csiParamState | (paramAction << 4),          // 3B
 			csiParamState | (collectAction << 4),        // 3C
 			csiParamState | (collectAction << 4),        // 3D
@@ -1150,7 +1150,7 @@ var (
 			anywhereState | (paramAction << 4),          // 37
 			anywhereState | (paramAction << 4),          // 38
 			anywhereState | (paramAction << 4),          // 39
-			csiIgnoreState | (noneAction << 4),          // 3A
+			anywhereState | (paramAction << 4),          // 3A
 			anywhereState | (paramAction << 4),          // 3B
 			csiIgnoreState | (noneAction << 4),          // 3C
 			csiIgnoreState | (noneAction << 4),          // 3D
@@ -1408,7 +1408,7 @@ var (
 			dcsParamState | (paramAction << 4),          // 37
 			dcsParamState | (paramAction << 4),          // 38
 			dcsParamState | (paramAction << 4),          // 39
-			dcsIgnoreState | (noneAction << 4),          // 3A
+			dcsParamState | (paramAction << 4),          // 3A
 			dcsParamState | (paramAction << 4),          // 3B
 			dcsParamState | (collectAction << 4),        // 3C
 			dcsParamState | (collectAction << 4),        // 3D
@@ -2182,7 +2182,7 @@ var (
 			anywhereState | (paramAction << 4),          // 37
 			anywhereState | (paramAction << 4),          // 38
 			anywhereState | (paramAction << 4),          // 39
-			dcsIgnoreState | (noneAction << 4),          // 3A
+			anywhereState | (paramAction << 4),          // 3A
 			anywhereState | (paramAction << 4),          // 3B
 			dcsIgnoreState | (noneAction << 4),          // 3C
 			dcsIgnoreState | (noneAction << 4),          // 3D

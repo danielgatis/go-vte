@@ -1,4 +1,4 @@
-package vtparser
+package vte
 
 import (
 	"math"
@@ -14,63 +14,107 @@ type Action = byte
 
 const maxIntermediates = 2
 const maxOscRaw = 1024
-const maxParams = 16
+const maxOscParams = 16
 
-type printCallback func(char rune)
-type execCallback func(b byte)
-type putCallback func(b byte)
-type unhookCallback func()
-type hookCallback func(params []int64, intermediates []byte, ignore bool, r rune)
-type oscCallback func(params [][]byte, bellTerminated bool)
-type csiCallback func(params []int64, intermediates []byte, ignore bool, r rune)
-type escCallback func(intermediates []byte, ignore bool, b byte)
+// Performer is an interface for parsing.
+type Performer interface {
+	// Print is called when a print action is performed.
+	Print(r rune)
+
+	// Execute is called when an execute action is performed.
+	Execute(b byte)
+
+	// Put is called when a put action is performed.
+	Put(b byte)
+
+	// Unhook is called when an unhook action is performed.
+	Unhook()
+
+	// Hook is called when a hook action is performed.
+	Hook(params *Params, intermediates []byte, ignore bool, r rune)
+
+	// OscDispatch is called when an osc dispatch action is performed.
+	OscDispatch(params [][]byte, bellTerminated bool)
+
+	// CsiDispatch is called when a csi dispatch action is performed.
+	CsiDispatch(params *Params, intermediates []byte, ignore bool, r rune)
+
+	// EscDispatch is called when an esc dispatch action is performed.
+	EscDispatch(intermediates []byte, ignore bool, b byte)
+}
 
 // Parser represents a state machine.
 type Parser struct {
 	state           byte
-	intermediates   [maxIntermediates]byte
+	intermediates   [maxIntermediates]uint8
 	intermediateIdx int
-	params          [maxParams]int64
-	param           int64
-	numParams       int
+	params          *Params
+	param           uint16
 	oscRaw          []byte
-	oscParams       [maxParams][2]int
+	oscParams       [maxOscParams][2]int
 	oscNumParams    int
 	ignoring        bool
 	utf8Parser      *utf8.Parser
 
-	prtcb printCallback
-	execb execCallback
-	putcb putCallback
-	uhocb unhookCallback
-	hokcb hookCallback
-	osccb oscCallback
-	csicb csiCallback
-	esccb escCallback
+	performer Performer
+}
+
+func (p *Parser) prtcb(char rune) {
+	if p.performer != nil {
+		p.performer.Print(char)
+	}
+}
+
+func (p *Parser) execb(b byte) {
+	if p.performer != nil {
+		p.performer.Execute(b)
+	}
+}
+
+func (p *Parser) putcb(b byte) {
+	if p.performer != nil {
+		p.performer.Put(b)
+	}
+}
+
+func (p *Parser) uhocb() {
+	if p.performer != nil {
+		p.performer.Unhook()
+	}
+}
+
+func (p *Parser) hokcb(params *Params, intermediates []byte, ignore bool, r rune) {
+	if p.performer != nil {
+		p.performer.Hook(params, intermediates, ignore, r)
+	}
+}
+
+func (p *Parser) osccb(params [][]byte, bellTerminated bool) {
+	if p.performer != nil {
+		p.performer.OscDispatch(params, bellTerminated)
+	}
+}
+
+func (p *Parser) csicb(params *Params, intermediates []byte, ignore bool, r rune) {
+	if p.performer != nil {
+		p.performer.CsiDispatch(params, intermediates, ignore, r)
+	}
+}
+
+func (p *Parser) esccb(intermediates []byte, ignore bool, b byte) {
+	if p.performer != nil {
+		p.performer.EscDispatch(intermediates, ignore, b)
+	}
 }
 
 // New returns a new parser.
 func New(
-	prtcb printCallback,
-	execb execCallback,
-	putcb putCallback,
-	uhocb unhookCallback,
-	hokcb hookCallback,
-	osccb oscCallback,
-	csicb csiCallback,
-	esccb escCallback,
+	performer Performer,
 ) *Parser {
 	p := &Parser{
-		state: groundState,
-
-		prtcb: prtcb,
-		execb: execb,
-		putcb: putcb,
-		uhocb: uhocb,
-		hokcb: hokcb,
-		osccb: osccb,
-		csicb: csicb,
-		esccb: esccb,
+		params:    NewParams(),
+		state:     groundState,
+		performer: performer,
 	}
 
 	p.utf8Parser = utf8.New(
@@ -91,7 +135,7 @@ func New(
 // Advance advances the state machine.
 func (p *Parser) Advance(b byte) {
 	if p.state == utf8State {
-		p.utf8Parser.Advance(b)
+		p.processUtf8(b)
 	} else {
 		change := stateTable[anywhereState][b]
 
@@ -108,17 +152,17 @@ func (p *Parser) Advance(b byte) {
 
 // Intermediates returns the intermediates
 func (p *Parser) Intermediates() []byte {
-	return p.intermediates[:p.intermediateIdx]
+	return append([]byte{}, p.intermediates[:p.intermediateIdx]...)
 }
 
 // Params returns the params
-func (p *Parser) Params() []int64 {
-	return p.params[:p.numParams]
+func (p *Parser) Params() *Params {
+	return p.params
 }
 
 // OscParams returns the osc params
 func (p *Parser) OscParams() [][]byte {
-	params := make([][]byte, 0)
+	params := make([][]byte, 0, maxOscParams)
 
 	for i := 0; i < p.oscNumParams; i++ {
 		indices := p.oscParams[i]
@@ -126,7 +170,7 @@ func (p *Parser) OscParams() [][]byte {
 		params = append(params, param)
 	}
 
-	return params
+	return params[:p.oscNumParams]
 }
 
 // StateName returns the current state name
@@ -139,25 +183,43 @@ func (p *Parser) State() State {
 	return p.state
 }
 
-func (p *Parser) performStateChange(state, action, b byte) {
-	if state == anywhereState {
-		p.performAction(action, b)
-	} else {
-		exitAction := exitActions[p.state]
-		entryAction := entryActions[state]
+func (p *Parser) processUtf8(b byte) {
+	p.utf8Parser.Advance(b)
+}
 
-		if exitAction != 0 {
-			p.performAction(exitAction, b)
+func (p *Parser) performStateChange(state, action, b byte) {
+	switch state {
+	case anywhereState:
+		p.performAction(action, b)
+	default:
+		switch p.state {
+		case dcsPassthroughState:
+			p.performAction(unhookAction, b)
+		case oscStringState:
+			p.performAction(oscEndAction, b)
+		default:
+			break
 		}
 
-		if action != 0 {
+		switch action {
+		case noneAction:
+			break
+		default:
 			p.performAction(action, b)
 		}
 
-		if entryAction != 0 {
-			p.performAction(entryAction, b)
+		switch state {
+		case csiEntryState, dcsEntryState, escapeState:
+			p.performAction(clearAction, b)
+		case dcsPassthroughState:
+			p.performAction(hookAction, b)
+		case oscStringState:
+			p.performAction(oscStartAction, b)
+		default:
+			break
 		}
 
+		// Assume the new state
 		p.state = state
 	}
 }
@@ -177,11 +239,10 @@ func (p *Parser) performAction(action, b byte) {
 		p.execb(b)
 
 	case hookAction:
-		if p.numParams == maxParams {
+		if p.params.IsFull() {
 			p.ignoring = true
 		} else {
-			p.params[p.numParams] = p.param
-			p.numParams++
+			p.params.Push(p.param)
 		}
 
 		p.hokcb(
@@ -204,17 +265,16 @@ func (p *Parser) performAction(action, b byte) {
 		if b == ';' {
 			paramIdx := p.oscNumParams
 			switch paramIdx {
-			case maxParams:
+			case maxOscParams:
 				return
 			case 0:
 				p.oscParams[paramIdx] = [2]int{0, idx}
-				p.oscNumParams++
 			default:
 				prev := p.oscParams[paramIdx-1]
 				begin := prev[1]
 				p.oscParams[paramIdx] = [2]int{begin, idx}
-				p.oscNumParams++
 			}
+			p.oscNumParams++
 		} else {
 			p.oscRaw = append(p.oscRaw, b)
 		}
@@ -224,7 +284,7 @@ func (p *Parser) performAction(action, b byte) {
 		idx := len(p.oscRaw)
 
 		switch paramIdx {
-		case maxParams:
+		case maxOscParams:
 			break
 		case 0:
 			p.oscParams[paramIdx] = [2]int{0, idx}
@@ -245,11 +305,10 @@ func (p *Parser) performAction(action, b byte) {
 		p.uhocb()
 
 	case csiDispatchAction:
-		if p.numParams == maxParams {
+		if p.params.IsFull() {
 			p.ignoring = true
 		} else {
-			p.params[p.numParams] = p.param
-			p.numParams++
+			p.params.Push(p.param)
 		}
 
 		p.csicb(
@@ -275,60 +334,46 @@ func (p *Parser) performAction(action, b byte) {
 		}
 
 	case paramAction:
-		idx := p.numParams
-
-		if idx == maxParams {
+		if p.params.IsFull() {
 			p.ignoring = true
 			return
 		}
 
 		if b == ';' {
-			p.params[idx] = p.param
+			p.params.Push(p.param)
 			p.param = 0
-			p.numParams++
+		} else if b == ':' {
+			p.params.Extend(p.param)
+			p.param = 0
 		} else {
-			p.param = smul64(p.param, 10)
-			p.param = sadd64(p.param, int64((b - '0')))
+			p.param = smulu16(p.param, 10)
+			p.param = saddu16(p.param, uint16((b - '0')))
 		}
 
 	case clearAction:
+		// Reset everything on ESC/CSI/DCS entry
 		p.intermediateIdx = 0
 		p.ignoring = false
-		p.numParams = 0
 		p.param = 0
 
+		p.params.Clear()
+
 	case beginUtf8Action:
-		p.utf8Parser.Advance(b)
+		p.processUtf8(b)
 	}
 }
 
-func sadd64(a, b int64) int64 {
-	if b > 0 && a > math.MaxInt64-b {
-		return math.MaxInt64
-	}
-
-	if b < 0 && a < math.MinInt64-b {
-		return math.MinInt64
+func saddu16(a, b uint16) uint16 {
+	if b > 0 && a > math.MaxUint16-b {
+		return math.MaxUint16
 	}
 
 	return a + b
 }
 
-func smul64(a, b int64) int64 {
-	if a > 0 && b > 0 && a > math.MaxInt64/b {
-		return math.MaxInt64
-	}
-
-	if a > 0 && b <= 0 && b < math.MinInt64/a {
-		return math.MinInt64
-	}
-
-	if a <= 0 && b > 0 && a < math.MinInt64/b {
-		return math.MinInt64
-	}
-
-	if a < 0 && b <= 0 && b < math.MaxInt64/a {
-		return math.MaxInt64
+func smulu16(a, b uint16) uint16 {
+	if a > 0 && b > 0 && a > math.MaxUint16/b {
+		return math.MaxUint16
 	}
 
 	return a * b
