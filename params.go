@@ -5,7 +5,8 @@ import (
 	"strings"
 )
 
-const maxParams = 32
+// MaxParams is the maximum number of parameters allowed.
+const MaxParams = 32
 
 // Params is a parameters for VTE.
 type Params struct {
@@ -15,10 +16,10 @@ type Params struct {
 	// subparams at the same index as the param in the `params` slice.
 	//
 	// At the subparam positions the length will always be `0`.
-	subparams [maxParams]uint8
+	subparams [MaxParams]uint8
 
 	// All parameters and subparameters
-	params [maxParams]uint16
+	params [MaxParams]uint16
 
 	// Number of subparams in the current parameter.
 	current_subparams uint8
@@ -44,7 +45,7 @@ func (p *Params) IsEmpty() bool {
 
 // IsFull returns true if there are no more parameters can be added.
 func (p *Params) IsFull() bool {
-	return p.len == maxParams
+	return p.len == MaxParams
 }
 
 // Clear clears all parameters.

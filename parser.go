@@ -12,9 +12,14 @@ type State = byte
 // Action represents a action type
 type Action = byte
 
-const maxIntermediates = 2
-const maxOscRaw = 1024
-const maxOscParams = 16
+// MaxIntermediates is the maximum number of intermediates allowed.
+const MaxIntermediates = 2
+
+// MaxOscRaw is the maximum number of bytes allowed in an osc parameter.
+const MaxOscRaw = 1024
+
+// MaxOscParams is the maximum number of osc parameters allowed.
+const MaxOscParams = 16
 
 // Performer is an interface for parsing.
 type Performer interface {
@@ -46,12 +51,12 @@ type Performer interface {
 // Parser represents a state machine.
 type Parser struct {
 	state           byte
-	intermediates   [maxIntermediates]uint8
+	intermediates   [MaxIntermediates]uint8
 	intermediateIdx int
 	params          *Params
 	param           uint16
 	oscRaw          []byte
-	oscParams       [maxOscParams][2]int
+	oscParams       [MaxOscParams][2]int
 	oscNumParams    int
 	ignoring        bool
 	utf8Parser      *utf8.Parser
@@ -113,19 +118,19 @@ func New(
 ) *Parser {
 	p := &Parser{
 		params:    NewParams(),
-		state:     groundState,
+		state:     GroundState,
 		performer: performer,
 	}
 
 	p.utf8Parser = utf8.New(
 		func(r rune) {
 			p.prtcb(r)
-			p.state = groundState
+			p.state = GroundState
 		},
 
 		func() {
 			p.prtcb('�')
-			p.state = groundState
+			p.state = GroundState
 		},
 	)
 
@@ -134,10 +139,10 @@ func New(
 
 // Advance advances the state machine.
 func (p *Parser) Advance(b byte) {
-	if p.state == utf8State {
+	if p.state == Utf8State {
 		p.processUtf8(b)
 	} else {
-		change := stateTable[anywhereState][b]
+		change := stateTable[AnywhereState][b]
 
 		if change == 0 {
 			change = stateTable[p.state][b]
@@ -162,7 +167,7 @@ func (p *Parser) Params() *Params {
 
 // OscParams returns the osc params
 func (p *Parser) OscParams() [][]byte {
-	params := make([][]byte, 0, maxOscParams)
+	params := make([][]byte, 0, MaxOscParams)
 
 	for i := 0; i < p.oscNumParams; i++ {
 		indices := p.oscParams[i]
@@ -189,32 +194,32 @@ func (p *Parser) processUtf8(b byte) {
 
 func (p *Parser) performStateChange(state, action, b byte) {
 	switch state {
-	case anywhereState:
+	case AnywhereState:
 		p.performAction(action, b)
 	default:
 		switch p.state {
-		case dcsPassthroughState:
-			p.performAction(unhookAction, b)
-		case oscStringState:
-			p.performAction(oscEndAction, b)
+		case DcsPassthroughState:
+			p.performAction(UnhookAction, b)
+		case OscStringState:
+			p.performAction(OscEndAction, b)
 		default:
 			break
 		}
 
 		switch action {
-		case noneAction:
+		case NoneAction:
 			break
 		default:
 			p.performAction(action, b)
 		}
 
 		switch state {
-		case csiEntryState, dcsEntryState, escapeState:
-			p.performAction(clearAction, b)
-		case dcsPassthroughState:
-			p.performAction(hookAction, b)
-		case oscStringState:
-			p.performAction(oscStartAction, b)
+		case CsiEntryState, DcsEntryState, EscapeState:
+			p.performAction(ClearAction, b)
+		case DcsPassthroughState:
+			p.performAction(HookAction, b)
+		case OscStringState:
+			p.performAction(OscStartAction, b)
 		default:
 			break
 		}
@@ -226,19 +231,19 @@ func (p *Parser) performStateChange(state, action, b byte) {
 
 func (p *Parser) performAction(action, b byte) {
 	switch action {
-	case ignoreAction:
+	case IgnoreAction:
 		break
 
-	case noneAction:
+	case NoneAction:
 		break
 
-	case printAction:
+	case PrintAction:
 		p.prtcb(rune(b))
 
-	case executeAction:
+	case ExecuteAction:
 		p.execb(b)
 
-	case hookAction:
+	case HookAction:
 		if p.params.IsFull() {
 			p.ignoring = true
 		} else {
@@ -252,20 +257,20 @@ func (p *Parser) performAction(action, b byte) {
 			rune(b),
 		)
 
-	case putAction:
+	case PutAction:
 		p.putcb(b)
 
-	case oscStartAction:
+	case OscStartAction:
 		p.oscRaw = make([]byte, 0)
 		p.oscNumParams = 0
 
-	case oscPutAction:
+	case OscPutAction:
 		idx := len(p.oscRaw)
 
 		if b == ';' {
 			paramIdx := p.oscNumParams
 			switch paramIdx {
-			case maxOscParams:
+			case MaxOscParams:
 				return
 			case 0:
 				p.oscParams[paramIdx] = [2]int{0, idx}
@@ -279,12 +284,12 @@ func (p *Parser) performAction(action, b byte) {
 			p.oscRaw = append(p.oscRaw, b)
 		}
 
-	case oscEndAction:
+	case OscEndAction:
 		paramIdx := p.oscNumParams
 		idx := len(p.oscRaw)
 
 		switch paramIdx {
-		case maxOscParams:
+		case MaxOscParams:
 			break
 		case 0:
 			p.oscParams[paramIdx] = [2]int{0, idx}
@@ -301,10 +306,10 @@ func (p *Parser) performAction(action, b byte) {
 			b == 0x07,
 		)
 
-	case unhookAction:
+	case UnhookAction:
 		p.uhocb()
 
-	case csiDispatchAction:
+	case CsiDispatchAction:
 		if p.params.IsFull() {
 			p.ignoring = true
 		} else {
@@ -318,22 +323,22 @@ func (p *Parser) performAction(action, b byte) {
 			rune(b),
 		)
 
-	case escDispatchAction:
+	case EscDispatchAction:
 		p.esccb(
 			p.Intermediates(),
 			p.ignoring,
 			b,
 		)
 
-	case collectAction:
-		if p.intermediateIdx == maxIntermediates {
+	case CollectAction:
+		if p.intermediateIdx == MaxIntermediates {
 			p.ignoring = true
 		} else {
 			p.intermediates[p.intermediateIdx] = b
 			p.intermediateIdx++
 		}
 
-	case paramAction:
+	case ParamAction:
 		if p.params.IsFull() {
 			p.ignoring = true
 			return
@@ -350,7 +355,7 @@ func (p *Parser) performAction(action, b byte) {
 			p.param = saddu16(p.param, uint16((b - '0')))
 		}
 
-	case clearAction:
+	case ClearAction:
 		// Reset everything on ESC/CSI/DCS entry
 		p.intermediateIdx = 0
 		p.ignoring = false
@@ -358,7 +363,7 @@ func (p *Parser) performAction(action, b byte) {
 
 		p.params.Clear()
 
-	case beginUtf8Action:
+	case BeginUtf8Action:
 		p.processUtf8(b)
 	}
 }

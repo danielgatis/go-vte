@@ -3,219 +3,219 @@
 require "erb"
 
 action_names = [
-  :none,
-  :clear,
-  :collect,
-  :csiDispatch,
-  :escDispatch,
-  :execute,
-  :hook,
-  :ignore,
-  :oscEnd,
-  :oscPut,
-  :oscStart,
-  :param,
-  :print,
-  :put,
-  :unhook,
-  :beginUtf8,
+  :None,
+  :Clear,
+  :Collect,
+  :CsiDispatch,
+  :EscDispatch,
+  :Execute,
+  :Hook,
+  :Ignore,
+  :OscEnd,
+  :OscPut,
+  :OscStart,
+  :Param,
+  :Print,
+  :Put,
+  :Unhook,
+  :BeginUtf8,
 ]
 
 state_names = [
-  :anywhere,
-  :csiEntry,
-  :csiIgnore,
-  :csiIntermediate,
-  :csiParam,
-  :dcsEntry,
-  :dcsIgnore,
-  :dcsIntermediate,
-  :dcsParam,
-  :dcsPassthrough,
-  :escape,
-  :escapeIntermediate,
-  :ground,
-  :oscString,
-  :sosPmApcString,
-  :utf8,
+  :Anywhere,
+  :CsiEntry,
+  :CsiIgnore,
+  :CsiIntermediate,
+  :CsiParam,
+  :DcsEntry,
+  :DcsIgnore,
+  :DcsIntermediate,
+  :DcsParam,
+  :DcsPassthrough,
+  :Escape,
+  :EscapeIntermediate,
+  :Ground,
+  :OscString,
+  :SosPmApcString,
+  :Utf8,
 ]
 
 states = {}
 
-states[:anywhere] = {
-  0x18 => [:ground, :execute],
-  0x1a => [:ground, :execute],
-  0x1b => [:escape, :none],
+states[:Anywhere] = {
+  0x18 => [:Ground, :Execute],
+  0x1a => [:Ground, :Execute],
+  0x1b => [:Escape, :None],
 }
 
-states[:ground] = {
-  0x00..0x17 => [:anywhere, :execute],
-  0x19       => [:anywhere, :execute],
-  0x1c..0x1f => [:anywhere, :execute],
-  0x20..0x7f => [:anywhere, :print],
-  0x80..0x8f => [:anywhere, :execute],
-  0x91..0x9a => [:anywhere, :execute],
-  0x9c       => [:anywhere, :execute],
-  0xc2..0xdf => [:utf8, :beginUtf8], #Beginning of UTF-8 2 byte sequence
-  0xe0..0xef => [:utf8, :beginUtf8], #Beginning of UTF-8 3 byte sequence
-  0xf0..0xf4 => [:utf8, :beginUtf8], #Beginning of UTF-8 4 byte sequence
+states[:Ground] = {
+  0x00..0x17 => [:Anywhere, :Execute],
+  0x19       => [:Anywhere, :Execute],
+  0x1c..0x1f => [:Anywhere, :Execute],
+  0x20..0x7f => [:Anywhere, :Print],
+  0x80..0x8f => [:Anywhere, :Execute],
+  0x91..0x9a => [:Anywhere, :Execute],
+  0x9c       => [:Anywhere, :Execute],
+  0xc2..0xdf => [:Utf8, :BeginUtf8], #Beginning of UTF-8 2 byte sequence
+  0xe0..0xef => [:Utf8, :BeginUtf8], #Beginning of UTF-8 3 byte sequence
+  0xf0..0xf4 => [:Utf8, :BeginUtf8], #Beginning of UTF-8 4 byte sequence
 }
 
-states[:escape] = {
-  0x00..0x17 => [:anywhere, :execute],
-  0x19       => [:anywhere, :execute],
-  0x1c..0x1f => [:anywhere, :execute],
-  0x7f       => [:anywhere, :ignore],
-  0x20..0x2f => [:escapeIntermediate, :collect],
-  0x30..0x4f => [:ground, :escDispatch],
-  0x51..0x57 => [:ground, :escDispatch],
-  0x59       => [:ground, :escDispatch],
-  0x5a       => [:ground, :escDispatch],
-  0x5c       => [:ground, :escDispatch],
-  0x60..0x7e => [:ground, :escDispatch],
-  0x5b       => [:csiEntry, :none],
-  0x5d       => [:oscString, :none],
-  0x50       => [:dcsEntry, :none],
-  0x58       => [:sosPmApcString, :none],
-  0x5e       => [:sosPmApcString, :none],
-  0x5f       => [:sosPmApcString, :none],
+states[:Escape] = {
+  0x00..0x17 => [:Anywhere, :Execute],
+  0x19       => [:Anywhere, :Execute],
+  0x1c..0x1f => [:Anywhere, :Execute],
+  0x7f       => [:Anywhere, :Ignore],
+  0x20..0x2f => [:EscapeIntermediate, :Collect],
+  0x30..0x4f => [:Ground, :EscDispatch],
+  0x51..0x57 => [:Ground, :EscDispatch],
+  0x59       => [:Ground, :EscDispatch],
+  0x5a       => [:Ground, :EscDispatch],
+  0x5c       => [:Ground, :EscDispatch],
+  0x60..0x7e => [:Ground, :EscDispatch],
+  0x5b       => [:CsiEntry, :None],
+  0x5d       => [:OscString, :None],
+  0x50       => [:DcsEntry, :None],
+  0x58       => [:SosPmApcString, :None],
+  0x5e       => [:SosPmApcString, :None],
+  0x5f       => [:SosPmApcString, :None],
 }
 
-states[:escapeIntermediate] = {
-  0x00..0x17 => [:anywhere, :execute],
-  0x19       => [:anywhere, :execute],
-  0x1c..0x1f => [:anywhere, :execute],
-  0x20..0x2f => [:anywhere, :collect],
-  0x7f       => [:anywhere, :ignore],
-  0x30..0x7e => [:ground, :escDispatch],
+states[:EscapeIntermediate] = {
+  0x00..0x17 => [:Anywhere, :Execute],
+  0x19       => [:Anywhere, :Execute],
+  0x1c..0x1f => [:Anywhere, :Execute],
+  0x20..0x2f => [:Anywhere, :Collect],
+  0x7f       => [:Anywhere, :Ignore],
+  0x30..0x7e => [:Ground, :EscDispatch],
 }
 
-states[:csiEntry] = {
-  0x00..0x17 => [:anywhere, :execute],
-  0x19       => [:anywhere, :execute],
-  0x1c..0x1f => [:anywhere, :execute],
-  0x7f       => [:anywhere, :ignore],
-  0x20..0x2f => [:csiIntermediate, :collect],
-  0x30..0x39 => [:csiParam, :param],
-  0x3a..0x3b => [:csiParam, :param],
-  0x3c..0x3f => [:csiParam, :collect],
-  0x40..0x7e => [:ground, :csiDispatch],
+states[:CsiEntry] = {
+  0x00..0x17 => [:Anywhere, :Execute],
+  0x19       => [:Anywhere, :Execute],
+  0x1c..0x1f => [:Anywhere, :Execute],
+  0x7f       => [:Anywhere, :Ignore],
+  0x20..0x2f => [:CsiIntermediate, :Collect],
+  0x30..0x39 => [:CsiParam, :Param],
+  0x3a..0x3b => [:CsiParam, :Param],
+  0x3c..0x3f => [:CsiParam, :Collect],
+  0x40..0x7e => [:Ground, :CsiDispatch],
 }
 
-states[:csiIgnore] = {
-  0x00..0x17 => [:anywhere, :execute],
-  0x19       => [:anywhere, :execute],
-  0x1c..0x1f => [:anywhere, :execute],
-  0x20..0x3f => [:anywhere, :ignore],
-  0x7f       => [:anywhere, :ignore],
-  0x40..0x7e => [:ground, :none],
+states[:CsiIgnore] = {
+  0x00..0x17 => [:Anywhere, :Execute],
+  0x19       => [:Anywhere, :Execute],
+  0x1c..0x1f => [:Anywhere, :Execute],
+  0x20..0x3f => [:Anywhere, :Ignore],
+  0x7f       => [:Anywhere, :Ignore],
+  0x40..0x7e => [:Ground, :None],
 }
 
-states[:csiParam] = {
-  0x00..0x17 => [:anywhere, :execute],
-  0x19       => [:anywhere, :execute],
-  0x1c..0x1f => [:anywhere, :execute],
-  0x30..0x39 => [:anywhere, :param],
-  0x3a..0x3b => [:anywhere, :param],
-  0x7f       => [:anywhere, :ignore],
-  0x3c..0x3f => [:csiIgnore, :none],
-  0x20..0x2f => [:csiIntermediate, :collect],
-  0x40..0x7e => [:ground, :csiDispatch],
+states[:CsiParam] = {
+  0x00..0x17 => [:Anywhere, :Execute],
+  0x19       => [:Anywhere, :Execute],
+  0x1c..0x1f => [:Anywhere, :Execute],
+  0x30..0x39 => [:Anywhere, :Param],
+  0x3a..0x3b => [:Anywhere, :Param],
+  0x7f       => [:Anywhere, :Ignore],
+  0x3c..0x3f => [:CsiIgnore, :None],
+  0x20..0x2f => [:CsiIntermediate, :Collect],
+  0x40..0x7e => [:Ground, :CsiDispatch],
 }
 
-states[:csiIntermediate] = {
-  0x00..0x17 => [:anywhere, :execute],
-  0x19       => [:anywhere, :execute],
-  0x1c..0x1f => [:anywhere, :execute],
-  0x20..0x2f => [:anywhere, :collect],
-  0x7f       => [:anywhere, :ignore],
-  0x30..0x3f => [:csiIgnore, :none],
-  0x40..0x7e => [:ground, :csiDispatch],
+states[:CsiIntermediate] = {
+  0x00..0x17 => [:Anywhere, :Execute],
+  0x19       => [:Anywhere, :Execute],
+  0x1c..0x1f => [:Anywhere, :Execute],
+  0x20..0x2f => [:Anywhere, :Collect],
+  0x7f       => [:Anywhere, :Ignore],
+  0x30..0x3f => [:CsiIgnore, :None],
+  0x40..0x7e => [:Ground, :CsiDispatch],
 }
 
-states[:dcsEntry] = {
-  0x00..0x17 => [:anywhere, :ignore],
-  0x19       => [:anywhere, :ignore],
-  0x1c..0x1f => [:anywhere, :ignore],
-  0x7f       => [:anywhere, :ignore],
-  0x20..0x2f => [:dcsIntermediate, :collect],
-  0x30..0x39 => [:dcsParam, :param],
-  0x3a..0x3b => [:dcsParam, :param],
-  0x3c..0x3f => [:dcsParam, :collect],
-  0x40..0x7e => [:dcsPassthrough, :none],
+states[:DcsEntry] = {
+  0x00..0x17 => [:Anywhere, :Ignore],
+  0x19       => [:Anywhere, :Ignore],
+  0x1c..0x1f => [:Anywhere, :Ignore],
+  0x7f       => [:Anywhere, :Ignore],
+  0x20..0x2f => [:DcsIntermediate, :Collect],
+  0x30..0x39 => [:DcsParam, :Param],
+  0x3a..0x3b => [:DcsParam, :Param],
+  0x3c..0x3f => [:DcsParam, :Collect],
+  0x40..0x7e => [:DcsPassthrough, :None],
 }
 
-states[:dcsIntermediate] = {
-  0x00..0x17 => [:anywhere, :ignore],
-  0x19       => [:anywhere, :ignore],
-  0x1c..0x1f => [:anywhere, :ignore],
-  0x20..0x2f => [:anywhere, :collect],
-  0x7f       => [:anywhere, :ignore],
-  0x30..0x3f => [:dcsIgnore, :none],
-  0x40..0x7e => [:dcsPassthrough, :none],
+states[:DcsIntermediate] = {
+  0x00..0x17 => [:Anywhere, :Ignore],
+  0x19       => [:Anywhere, :Ignore],
+  0x1c..0x1f => [:Anywhere, :Ignore],
+  0x20..0x2f => [:Anywhere, :Collect],
+  0x7f       => [:Anywhere, :Ignore],
+  0x30..0x3f => [:DcsIgnore, :None],
+  0x40..0x7e => [:DcsPassthrough, :None],
 }
 
-states[:dcsIgnore] = {
-  0x00..0x17 => [:anywhere, :ignore],
-  0x19       => [:anywhere, :ignore],
-  0x1c..0x1f => [:anywhere, :ignore],
-  0x20..0x7f => [:anywhere, :ignore],
-  0x9c       => [:ground, :none],
+states[:DcsIgnore] = {
+  0x00..0x17 => [:Anywhere, :Ignore],
+  0x19       => [:Anywhere, :Ignore],
+  0x1c..0x1f => [:Anywhere, :Ignore],
+  0x20..0x7f => [:Anywhere, :Ignore],
+  0x9c       => [:Ground, :None],
 }
 
-states[:dcsParam] = {
-  0x00..0x17 => [:anywhere, :ignore],
-  0x19       => [:anywhere, :ignore],
-  0x1c..0x1f => [:anywhere, :ignore],
-  0x30..0x39 => [:anywhere, :param],
-  0x3a..0x3b => [:anywhere, :param],
-  0x7f       => [:anywhere, :ignore],
-  0x3c..0x3f => [:dcsIgnore, :none],
-  0x20..0x2f => [:dcsIntermediate, :collect],
-  0x40..0x7e => [:dcsPassthrough, :none],
+states[:DcsParam] = {
+  0x00..0x17 => [:Anywhere, :Ignore],
+  0x19       => [:Anywhere, :Ignore],
+  0x1c..0x1f => [:Anywhere, :Ignore],
+  0x30..0x39 => [:Anywhere, :Param],
+  0x3a..0x3b => [:Anywhere, :Param],
+  0x7f       => [:Anywhere, :Ignore],
+  0x3c..0x3f => [:DcsIgnore, :None],
+  0x20..0x2f => [:DcsIntermediate, :Collect],
+  0x40..0x7e => [:DcsPassthrough, :None],
 }
 
-states[:dcsPassthrough] = {
-  0x00..0x17 => [:anywhere, :put],
-  0x19       => [:anywhere, :put],
-  0x1c..0x1f => [:anywhere, :put],
-  0x20..0x7e => [:anywhere, :put],
-  0x7f       => [:anywhere, :ignore],
-  0x9c       => [:ground, :none],
+states[:DcsPassthrough] = {
+  0x00..0x17 => [:Anywhere, :Put],
+  0x19       => [:Anywhere, :Put],
+  0x1c..0x1f => [:Anywhere, :Put],
+  0x20..0x7e => [:Anywhere, :Put],
+  0x7f       => [:Anywhere, :Ignore],
+  0x9c       => [:Ground, :None],
 }
 
-states[:sosPmApcString] = {
-  0x00..0x17 => [:anywhere, :ignore],
-  0x19       => [:anywhere, :ignore],
-  0x1c..0x1f => [:anywhere, :ignore],
-  0x20..0x7f => [:anywhere, :ignore],
-  0x9c       => [:ground, :none],
+states[:SosPmApcString] = {
+  0x00..0x17 => [:Anywhere, :Ignore],
+  0x19       => [:Anywhere, :Ignore],
+  0x1c..0x1f => [:Anywhere, :Ignore],
+  0x20..0x7f => [:Anywhere, :Ignore],
+  0x9c       => [:Ground, :None],
 }
 
-states[:oscString] = {
-  0x00..0x06 => [:anywhere, :ignore],
-  0x07       => [:ground, :none],
-  0x08..0x17 => [:anywhere, :ignore],
-  0x19       => [:anywhere, :ignore],
-  0x1c..0x1f => [:anywhere, :ignore],
-  0x20..0xff => [:anywhere, :oscPut],
+states[:OscString] = {
+  0x00..0x06 => [:Anywhere, :Ignore],
+  0x07       => [:Ground, :None],
+  0x08..0x17 => [:Anywhere, :Ignore],
+  0x19       => [:Anywhere, :Ignore],
+  0x1c..0x1f => [:Anywhere, :Ignore],
+  0x20..0xff => [:Anywhere, :OscPut],
 }
 
 entry_actions = [
   nil,
-  :clear,
+  :Clear,
   nil,
   nil,
   nil,
-  :clear,
+  :Clear,
   nil,
   nil,
   nil,
-  :hook,
-  :clear,
+  :Hook,
+  :Clear,
   nil,
   nil,
-  :oscStart,
+  :OscStart,
   nil,
   nil,
 ]
@@ -230,11 +230,11 @@ exit_actions = [
   nil,
   nil,
   nil,
-  :unhook,
+  :Unhook,
   nil,
   nil,
   nil,
-  :oscEnd,
+  :OscEnd,
   nil,
   nil,
 ]

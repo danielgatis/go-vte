@@ -48,11 +48,11 @@ func TestEmptyOsc(t *testing.T) {
 }
 
 func TestOscMaxParams(t *testing.T) {
-	input := fmt.Sprintf("\x1b]%s\x1b", strings.Repeat(";", maxOscParams+1))
+	input := fmt.Sprintf("\x1b]%s\x1b", strings.Repeat(";", MaxOscParams+1))
 	expected := testOscSequence{
 		params: [][]byte{},
 	}
-	for i := 0; i < maxOscParams; i++ {
+	for i := 0; i < MaxOscParams; i++ {
 		expected.params = append(expected.params, []byte{})
 	}
 
@@ -164,7 +164,7 @@ func TestOscContainingStringTerminator(t *testing.T) {
 }
 
 func TestOcsExceedMaxBufferSize(t *testing.T) {
-	numBytes := maxOscRaw + 100
+	numBytes := MaxOscRaw + 100
 	inputStart := []byte{0x1b, ']', '5', '2', ';', 's'}
 	inputEnd := []byte{0x07}
 

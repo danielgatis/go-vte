@@ -9,7 +9,7 @@ import (
 )
 
 func TestDcsMaxParams(t *testing.T) {
-	input := fmt.Sprintf("\x1bP%sp", strings.Repeat("1;", maxParams+1))
+	input := fmt.Sprintf("\x1bP%sp", strings.Repeat("1;", MaxParams+1))
 	expected := testDcsHookSequence{
 		params: [][]uint16{
 			{1}, {1}, {1}, {1}, {1}, {1}, {1}, {1},
@@ -29,7 +29,7 @@ func TestDcsMaxParams(t *testing.T) {
 
 	assert.Equal(t, 1, len(dispatcher.dispatched))
 	assert.Equal(t, expected.ignore, dispatcher.dispatched[0].(testDcsHookSequence).ignore)
-	assert.Equal(t, maxParams, len(dispatcher.dispatched[0].(testDcsHookSequence).params))
+	assert.Equal(t, MaxParams, len(dispatcher.dispatched[0].(testDcsHookSequence).params))
 	assert.Equal(t, expected.params, dispatcher.dispatched[0].(testDcsHookSequence).params)
 }
 

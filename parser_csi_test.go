@@ -21,7 +21,7 @@ func TestCsiMaxParams(t *testing.T) {
 		rune:          'p',
 	}
 
-	input := "\x1b[" + strings.Repeat("1;", maxParams-1) + "p"
+	input := "\x1b[" + strings.Repeat("1;", MaxParams-1) + "p"
 	dispatcher := &testDispatcher{}
 	parser := New(dispatcher)
 
@@ -45,7 +45,7 @@ func TestCsiParamsIgnoreLong(t *testing.T) {
 		intermediates: []byte{},
 		rune:          'p',
 	}
-	strParams := "\x1b[" + strings.Repeat("1;", maxParams) + "p"
+	strParams := "\x1b[" + strings.Repeat("1;", MaxParams) + "p"
 
 	dispatcher := &testDispatcher{}
 	parser := New(dispatcher)
