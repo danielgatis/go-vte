@@ -18,7 +18,7 @@ var oscBytes = []byte{
 
 func TestOsc(t *testing.T) {
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range oscBytes {
 		parser.Advance(b)
@@ -37,7 +37,7 @@ func TestEmptyOsc(t *testing.T) {
 		bell:   true,
 	}
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte{0x1b, 0x5d, 0x07} { // ESC ] BEL ("\x1b]\x07")
 		parser.Advance(b)
@@ -48,16 +48,16 @@ func TestEmptyOsc(t *testing.T) {
 }
 
 func TestOscMaxParams(t *testing.T) {
-	input := fmt.Sprintf("\x1b]%s\x1b", strings.Repeat(";", MaxOscParams+1))
+	input := fmt.Sprintf("\x1b]%s\x1b", strings.Repeat(";", maxOscParams+1))
 	expected := testOscSequence{
 		params: [][]byte{},
 	}
-	for i := 0; i < MaxOscParams; i++ {
+	for i := 0; i < maxOscParams; i++ {
 		expected.params = append(expected.params, []byte{})
 	}
 
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte(input) {
 		parser.Advance(b)
@@ -76,7 +76,7 @@ func TestOscBellTerminated(t *testing.T) {
 		bell: true,
 	}
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte(input) {
 		parser.Advance(b)
@@ -102,7 +102,7 @@ func TestOscC0StTerminated(t *testing.T) {
 		},
 	}
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte(input) {
 		parser.Advance(b)
@@ -126,7 +126,7 @@ func TestOscWithUTF8Arguments(t *testing.T) {
 		bell: true,
 	}
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range input {
 		parser.Advance(b)
@@ -153,7 +153,7 @@ func TestOscContainingStringTerminator(t *testing.T) {
 		},
 	}
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range input {
 		parser.Advance(b)
@@ -164,7 +164,7 @@ func TestOscContainingStringTerminator(t *testing.T) {
 }
 
 func TestOcsExceedMaxBufferSize(t *testing.T) {
-	numBytes := MaxOscRaw + 100
+	numBytes := maxOscRaw + 100
 	inputStart := []byte{0x1b, ']', '5', '2', ';', 's'}
 	inputEnd := []byte{0x07}
 
@@ -175,7 +175,7 @@ func TestOcsExceedMaxBufferSize(t *testing.T) {
 		bell: true,
 	}
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range inputStart {
 		parser.Advance(b)

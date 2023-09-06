@@ -13,7 +13,7 @@ func TestEscReset(t *testing.T) {
 		b:             'A',
 	}
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte("\x1b[3;1\x1b(A") {
 		parser.Advance(b)

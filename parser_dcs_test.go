@@ -9,7 +9,7 @@ import (
 )
 
 func TestDcsMaxParams(t *testing.T) {
-	input := fmt.Sprintf("\x1bP%sp", strings.Repeat("1;", MaxParams+1))
+	input := fmt.Sprintf("\x1bP%sp", strings.Repeat("1;", maxParams+1))
 	expected := testDcsHookSequence{
 		params: [][]uint16{
 			{1}, {1}, {1}, {1}, {1}, {1}, {1}, {1},
@@ -21,7 +21,7 @@ func TestDcsMaxParams(t *testing.T) {
 	}
 
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte(input) {
 		parser.Advance(b)
@@ -29,7 +29,7 @@ func TestDcsMaxParams(t *testing.T) {
 
 	assert.Equal(t, 1, len(dispatcher.dispatched))
 	assert.Equal(t, expected.ignore, dispatcher.dispatched[0].(testDcsHookSequence).ignore)
-	assert.Equal(t, MaxParams, len(dispatcher.dispatched[0].(testDcsHookSequence).params))
+	assert.Equal(t, maxParams, len(dispatcher.dispatched[0].(testDcsHookSequence).params))
 	assert.Equal(t, expected.params, dispatcher.dispatched[0].(testDcsHookSequence).params)
 }
 
@@ -46,7 +46,7 @@ func TestDcsReset(t *testing.T) {
 		testDcsUnhookSequence{},
 	}
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte(input) {
 		parser.Advance(b)
@@ -74,7 +74,7 @@ func TestDcsParse(t *testing.T) {
 	}
 
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte(input) {
 		parser.Advance(b)
@@ -84,7 +84,6 @@ func TestDcsParse(t *testing.T) {
 	assert.Equal(t, expected, dispatcher.dispatched)
 }
 
-// FIXME: This test is broken.
 func TestDcsIntermediateResetOnExit(t *testing.T) {
 	input := "\x1bP=1sZZZ\x1b+\x5c"
 	expected := []testSequence{
@@ -106,7 +105,7 @@ func TestDcsIntermediateResetOnExit(t *testing.T) {
 	}
 
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte(input) {
 		parser.Advance(b)

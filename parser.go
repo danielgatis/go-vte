@@ -12,14 +12,14 @@ type State = byte
 // Action represents a action type
 type Action = byte
 
-// MaxIntermediates is the maximum number of intermediates allowed.
-const MaxIntermediates = 2
+// maxIntermediates is the maximum number of intermediates allowed.
+const maxIntermediates = 2
 
-// MaxOscRaw is the maximum number of bytes allowed in an osc parameter.
-const MaxOscRaw = 1024
+// maxOscRaw is the maximum number of bytes allowed in an osc parameter.
+const maxOscRaw = 1024
 
-// MaxOscParams is the maximum number of osc parameters allowed.
-const MaxOscParams = 16
+// maxOscParams is the maximum number of osc parameters allowed.
+const maxOscParams = 16
 
 // Performer is an interface for parsing.
 type Performer interface {
@@ -36,13 +36,13 @@ type Performer interface {
 	Unhook()
 
 	// Hook is called when a hook action is performed.
-	Hook(params *Params, intermediates []byte, ignore bool, r rune)
+	Hook(params [][]uint16, intermediates []byte, ignore bool, r rune)
 
 	// OscDispatch is called when an osc dispatch action is performed.
 	OscDispatch(params [][]byte, bellTerminated bool)
 
 	// CsiDispatch is called when a csi dispatch action is performed.
-	CsiDispatch(params *Params, intermediates []byte, ignore bool, r rune)
+	CsiDispatch(params [][]uint16, intermediates []byte, ignore bool, r rune)
 
 	// EscDispatch is called when an esc dispatch action is performed.
 	EscDispatch(intermediates []byte, ignore bool, b byte)
@@ -51,12 +51,12 @@ type Performer interface {
 // Parser represents a state machine.
 type Parser struct {
 	state           byte
-	intermediates   [MaxIntermediates]uint8
+	intermediates   [maxIntermediates]uint8
 	intermediateIdx int
-	params          *Params
+	params          *params
 	param           uint16
 	oscRaw          []byte
-	oscParams       [MaxOscParams][2]int
+	oscParams       [maxOscParams][2]int
 	oscNumParams    int
 	ignoring        bool
 	utf8Parser      *utf8.Parser
@@ -88,7 +88,7 @@ func (p *Parser) uhocb() {
 	}
 }
 
-func (p *Parser) hokcb(params *Params, intermediates []byte, ignore bool, r rune) {
+func (p *Parser) hokcb(params [][]uint16, intermediates []byte, ignore bool, r rune) {
 	if p.performer != nil {
 		p.performer.Hook(params, intermediates, ignore, r)
 	}
@@ -100,7 +100,7 @@ func (p *Parser) osccb(params [][]byte, bellTerminated bool) {
 	}
 }
 
-func (p *Parser) csicb(params *Params, intermediates []byte, ignore bool, r rune) {
+func (p *Parser) csicb(params [][]uint16, intermediates []byte, ignore bool, r rune) {
 	if p.performer != nil {
 		p.performer.CsiDispatch(params, intermediates, ignore, r)
 	}
@@ -112,12 +112,12 @@ func (p *Parser) esccb(intermediates []byte, ignore bool, b byte) {
 	}
 }
 
-// New returns a new parser.
-func New(
+// NewParser returns a new parser.
+func NewParser(
 	performer Performer,
 ) *Parser {
 	p := &Parser{
-		params:    NewParams(),
+		params:    new(params),
 		state:     GroundState,
 		performer: performer,
 	}
@@ -161,13 +161,17 @@ func (p *Parser) Intermediates() []byte {
 }
 
 // Params returns the params
-func (p *Parser) Params() *Params {
-	return p.params
+func (p *Parser) Params() [][]uint16 {
+	var params [][]uint16
+	p.params.Range(func(param []uint16) {
+		params = append(params, param)
+	})
+	return params
 }
 
 // OscParams returns the osc params
 func (p *Parser) OscParams() [][]byte {
-	params := make([][]byte, 0, MaxOscParams)
+	params := make([][]byte, 0, maxOscParams)
 
 	for i := 0; i < p.oscNumParams; i++ {
 		indices := p.oscParams[i]
@@ -270,7 +274,7 @@ func (p *Parser) performAction(action, b byte) {
 		if b == ';' {
 			paramIdx := p.oscNumParams
 			switch paramIdx {
-			case MaxOscParams:
+			case maxOscParams:
 				return
 			case 0:
 				p.oscParams[paramIdx] = [2]int{0, idx}
@@ -289,7 +293,7 @@ func (p *Parser) performAction(action, b byte) {
 		idx := len(p.oscRaw)
 
 		switch paramIdx {
-		case MaxOscParams:
+		case maxOscParams:
 			break
 		case 0:
 			p.oscParams[paramIdx] = [2]int{0, idx}
@@ -331,7 +335,7 @@ func (p *Parser) performAction(action, b byte) {
 		)
 
 	case CollectAction:
-		if p.intermediateIdx == MaxIntermediates {
+		if p.intermediateIdx == maxIntermediates {
 			p.ignoring = true
 		} else {
 			p.intermediates[p.intermediateIdx] = b

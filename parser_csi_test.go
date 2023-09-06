@@ -21,9 +21,9 @@ func TestCsiMaxParams(t *testing.T) {
 		rune:          'p',
 	}
 
-	input := "\x1b[" + strings.Repeat("1;", MaxParams-1) + "p"
+	input := "\x1b[" + strings.Repeat("1;", maxParams-1) + "p"
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte(input) {
 		parser.Advance(b)
@@ -45,10 +45,10 @@ func TestCsiParamsIgnoreLong(t *testing.T) {
 		intermediates: []byte{},
 		rune:          'p',
 	}
-	strParams := "\x1b[" + strings.Repeat("1;", MaxParams) + "p"
+	strParams := "\x1b[" + strings.Repeat("1;", maxParams) + "p"
 
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte(strParams) {
 		parser.Advance(b)
@@ -67,7 +67,7 @@ func TestCsiParamsTrailingSemicolon(t *testing.T) {
 	}
 
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte("\x1b[4;m") {
 		parser.Advance(b)
@@ -86,7 +86,7 @@ func TestCsiParamsLeadingSemicolon(t *testing.T) {
 	}
 
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte("\x1b[;4m") {
 		parser.Advance(b)
@@ -105,7 +105,7 @@ func TestLongCsiParam(t *testing.T) {
 	}
 
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte("\x1b[9223372036854775808m") {
 		parser.Advance(b)
@@ -123,7 +123,7 @@ func TestCsiReset(t *testing.T) {
 		rune:          'h',
 	}
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte("\x1b[3;1\x1b[?1049h") {
 		parser.Advance(b)
@@ -145,7 +145,7 @@ func TestCsiSubparams(t *testing.T) {
 	}
 
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte("\x1b[38:2:255:0:255;1m") {
 		parser.Advance(b)
@@ -172,7 +172,7 @@ func TestParamsBufferFilledWithSubparams(t *testing.T) {
 	}
 
 	dispatcher := &testDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range []byte(input) {
 		parser.Advance(b)

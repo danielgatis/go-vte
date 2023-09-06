@@ -60,13 +60,9 @@ type testDispatcher struct {
 var _ Performer = &testDispatcher{}
 
 // CsiDispatch implements Performer.
-func (d *testDispatcher) CsiDispatch(params *Params, intermediates []byte, ignore bool, r rune) {
-	var csiParams [][]uint16
-	params.Range(func(param []uint16) {
-		csiParams = append(csiParams, param)
-	})
+func (d *testDispatcher) CsiDispatch(params [][]uint16, intermediates []byte, ignore bool, r rune) {
 	d.dispatched = append(d.dispatched, testCsiSequence{
-		params:        csiParams,
+		params:        params,
 		intermediates: intermediates,
 		ignore:        ignore,
 		rune:          r,
@@ -86,13 +82,9 @@ func (d *testDispatcher) EscDispatch(intermediates []byte, ignore bool, b byte) 
 func (*testDispatcher) Execute(b byte) {}
 
 // Hook implements Performer.
-func (d *testDispatcher) Hook(params *Params, intermediates []byte, ignore bool, r rune) {
-	var hookParams [][]uint16
-	params.Range(func(param []uint16) {
-		hookParams = append(hookParams, param)
-	})
+func (d *testDispatcher) Hook(params [][]uint16, intermediates []byte, ignore bool, r rune) {
 	d.dispatched = append(d.dispatched, testDcsHookSequence{
-		params:        hookParams,
+		params:        params,
 		intermediates: intermediates,
 		ignore:        ignore,
 		rune:          r,
@@ -142,11 +134,11 @@ func (p *benchDispatcher) Put(b byte) {}
 
 func (p *benchDispatcher) Unhook() {}
 
-func (p *benchDispatcher) Hook(params *Params, intermediates []byte, ignore bool, r rune) {}
+func (p *benchDispatcher) Hook(params [][]uint16, intermediates []byte, ignore bool, r rune) {}
 
 func (p *benchDispatcher) OscDispatch(params [][]byte, bellTerminated bool) {}
 
-func (p *benchDispatcher) CsiDispatch(params *Params, intermediates []byte, ignore bool, r rune) {
+func (p *benchDispatcher) CsiDispatch(params [][]uint16, intermediates []byte, ignore bool, r rune) {
 }
 
 func (p *benchDispatcher) EscDispatch(intermediates []byte, ignore bool, b byte) {}
@@ -160,7 +152,7 @@ func BenchmarkNext(bm *testing.B) {
 
 	bm.ResetTimer()
 	dispatcher := &benchDispatcher{}
-	parser := New(dispatcher)
+	parser := NewParser(dispatcher)
 
 	for _, b := range bytes {
 		parser.Advance(b)
@@ -172,7 +164,7 @@ func BenchmarkStateChanges(bm *testing.B) {
 
 	for i := 0; i < bm.N; i++ {
 		dispatcher := &benchDispatcher{}
-		parser := New(dispatcher)
+		parser := NewParser(dispatcher)
 
 		for i := 0; i < 1000; i++ {
 			for _, b := range []byte(input) {

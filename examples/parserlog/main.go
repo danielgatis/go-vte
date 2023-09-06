@@ -27,7 +27,7 @@ func (p *dispatcher) Unhook() {
 	fmt.Printf("[Unhook]\n")
 }
 
-func (p *dispatcher) Hook(params *vte.Params, intermediates []byte, ignore bool, r rune) {
+func (p *dispatcher) Hook(params [][]uint16, intermediates []byte, ignore bool, r rune) {
 	fmt.Printf("[Hook] params=%v, intermediates=%v, ignore=%v, r=%c\n", params, intermediates, ignore, r)
 }
 
@@ -35,7 +35,7 @@ func (p *dispatcher) OscDispatch(params [][]byte, bellTerminated bool) {
 	fmt.Printf("[OscDispatch] params=%v, bellTerminated=%v\n", params, bellTerminated)
 }
 
-func (p *dispatcher) CsiDispatch(params *vte.Params, intermediates []byte, ignore bool, r rune) {
+func (p *dispatcher) CsiDispatch(params [][]uint16, intermediates []byte, ignore bool, r rune) {
 	fmt.Printf("[CsiDispatch] params=%v, intermediates=%v, ignore=%v, r=%c\n", params, intermediates, ignore, r)
 }
 
@@ -46,7 +46,7 @@ func (p *dispatcher) EscDispatch(intermediates []byte, ignore bool, b byte) {
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 	dispatcher := &dispatcher{}
-	parser := vte.New(dispatcher)
+	parser := vte.NewParser(dispatcher)
 
 	buff := make([]byte, 2048)
 
