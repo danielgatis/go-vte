@@ -19,98 +19,15 @@ go get -u github.com/danielgatis/go-vte
 And then import the package in your code:
 
 ```go
-import "github.com/danielgatis/go-vte/vtparser"
+import "github.com/danielgatis/go-vte"
 ```
 
 ### Example
 
-An example described below is one of the use cases.
-
-```go
-package main
-
-import (
-	"bufio"
-	"fmt"
-	"io"
-	"os"
-
-	"github.com/danielgatis/go-vte/vtparser"
-)
-
-type dispatcher struct{}
-
-func (p *dispatcher) Print(r rune) {
-	fmt.Printf("[Print] %c\n", r)
-}
-
-func (p *dispatcher) Execute(b byte) {
-	fmt.Printf("[Execute] %02x\n", b)
-}
-
-func (p *dispatcher) Put(b byte) {
-	fmt.Printf("[Put] %02x\n", b)
-}
-
-func (p *dispatcher) Unhook() {
-	fmt.Printf("[Unhook]\n")
-}
-
-func (p *dispatcher) Hook(params []int64, intermediates []byte, ignore bool, r rune) {
-	fmt.Printf("[Hook] params=%v, intermediates=%v, ignore=%v, r=%v\n", params, intermediates, ignore, r)
-}
-
-func (p *dispatcher) OscDispatch(params [][]byte, bellTerminated bool) {
-	fmt.Printf("[OscDispatch] params=%v, bellTerminated=%v\n", params, bellTerminated)
-}
-
-func (p *dispatcher) CsiDispatch(params []int64, intermediates []byte, ignore bool, r rune) {
-	fmt.Printf("[CsiDispatch] params=%v, intermediates=%v, ignore=%v, r=%v\n", params, intermediates, ignore, r)
-}
-
-func (p *dispatcher) EscDispatch(intermediates []byte, ignore bool, b byte) {
-	fmt.Printf("[EscDispatch] intermediates=%v, ignore=%v, byte=%02x\n", intermediates, ignore, b)
-}
-
-func main() {
-	reader := bufio.NewReader(os.Stdin)
-	dispatcher := &dispatcher{}
-	parser := vtparser.New(
-		dispatcher.Print,
-		dispatcher.Execute,
-		dispatcher.Put,
-		dispatcher.Unhook,
-		dispatcher.Hook,
-		dispatcher.OscDispatch,
-		dispatcher.CsiDispatch,
-		dispatcher.EscDispatch,
-	)
-	
-	buff := make([]byte, 2048)
-
-	for {
-		n, err := reader.Read(buff)
-
-		if err != nil {
-			if err == io.EOF {
-				return
-			}
-
-			fmt.Printf("Err %v:", err)
-			return
-		}
-
-		for _, b := range buff[:n] {
-			parser.Advance(b)
-		}
-	}
-}
+Please look at: [examples/parserlog/main.go](examples/parserlog/main.go)
 
 ```
-
-
-```
-❯ echo -ne "Hello\nWorld" | go run main.go
+❯ echo -ne "Hello\nWorld" | go run ./examples/parserlog/main.go
 [Print] H
 [Print] e
 [Print] l
@@ -123,7 +40,6 @@ func main() {
 [Print] l
 [Print] d
 ```
-
 
 ## License
 
