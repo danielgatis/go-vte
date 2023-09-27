@@ -33,15 +33,6 @@ var (
     <% end -%>
   }
 
-  entryActions = []byte {
-    <% state_names.each.with_index do |name, i| -%>
-      <% if entry_actions[i] -%>
-        <%= entry_actions[i] %>Action, //<%= name %>State
-      <% else -%>
-        0, //<%= name %>State
-      <% end -%>
-    <% end -%>
-  }
 
   exitActions = []byte {
     <% state_names.each.with_index do |name, i| -%>

@@ -1,7 +1,7 @@
 package utf8
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,7 +20,7 @@ func TestParser(t *testing.T) {
 		},
 	)
 
-	data, err := ioutil.ReadFile("../fixtures/UTF-8-demo.txt")
+	data, err := os.ReadFile("../fixtures/UTF-8-demo.txt")
 
 	if err != nil {
 		t.Fatal(err)

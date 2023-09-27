@@ -3931,25 +3931,6 @@ var (
 		},
 	}
 
-	entryActions = []byte{
-		0,              //AnywhereState
-		ClearAction,    //CsiEntryState
-		0,              //CsiIgnoreState
-		0,              //CsiIntermediateState
-		0,              //CsiParamState
-		ClearAction,    //DcsEntryState
-		0,              //DcsIgnoreState
-		0,              //DcsIntermediateState
-		0,              //DcsParamState
-		HookAction,     //DcsPassthroughState
-		ClearAction,    //EscapeState
-		0,              //EscapeIntermediateState
-		0,              //GroundState
-		OscStartAction, //OscStringState
-		0,              //SosPmApcStringState
-		0,              //Utf8State
-	}
-
 	exitActions = []byte{
 		0,            //AnywhereState
 		0,            //CsiEntryState

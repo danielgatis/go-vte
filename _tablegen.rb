@@ -201,25 +201,6 @@ states[:OscString] = {
   0x20..0xff => [:Anywhere, :OscPut],
 }
 
-entry_actions = [
-  nil,
-  :Clear,
-  nil,
-  nil,
-  nil,
-  :Clear,
-  nil,
-  nil,
-  nil,
-  :Hook,
-  :Clear,
-  nil,
-  nil,
-  :OscStart,
-  nil,
-  nil,
-]
-
 exit_actions = [
   nil,
   nil,
