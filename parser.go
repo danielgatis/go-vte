@@ -3,7 +3,7 @@ package vte
 import (
 	"math"
 
-	"github.com/danielgatis/go-vte/utf8"
+	"github.com/danielgatis/go-utf8"
 )
 
 // State represents a state type
@@ -112,6 +112,10 @@ func (p *Parser) esccb(intermediates []byte, ignore bool, b byte) {
 	}
 }
 
+func (p *Parser) setState(state State) {
+	p.state = state
+}
+
 // NewParser returns a new parser.
 func NewParser(
 	performer Performer,
@@ -122,17 +126,8 @@ func NewParser(
 		performer: performer,
 	}
 
-	p.utf8Parser = utf8.New(
-		func(r rune) {
-			p.prtcb(r)
-			p.state = GroundState
-		},
-
-		func() {
-			p.prtcb('�')
-			p.state = GroundState
-		},
-	)
+	utf8Performer := newUtf8Performer(p.prtcb, p.setState)
+	p.utf8Parser = utf8.New(utf8Performer)
 
 	return p
 }

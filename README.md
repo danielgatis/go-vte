@@ -8,8 +8,6 @@ A GO version of https://github.com/alacritty/vte.
 
 The pkg `vtparse` implements a state machine that mirrors the behaviour of DEC (Digital Equipment Corporation) VT hardware terminals. The state machine was originally described by Paul Williams; more information can be found here: http://www.vt100.net/emu/dec_ansi_parser.
 
-The pkg `utf8` implements a state machine that reads UTF-8.
-
 ## Install
 
 ```bash
