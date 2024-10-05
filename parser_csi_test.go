@@ -58,6 +58,24 @@ func TestCsiParamsIgnoreLong(t *testing.T) {
 	assert.Equal(t, expected, dispatcher.dispatched[0])
 }
 
+func TestCsiNoParams(t *testing.T) {
+	expected := testCsiSequence{
+		intermediates: []byte{},
+		ignore:        false,
+		rune:          'C',
+	}
+
+	dispatcher := &testDispatcher{}
+	parser := NewParser(dispatcher)
+
+	for _, b := range []byte("\x1b[C") {
+		parser.Advance(b)
+	}
+
+	assert.Equal(t, 1, len(dispatcher.dispatched))
+	assert.Equal(t, expected, dispatcher.dispatched[0])
+}
+
 func TestCsiParamsTrailingSemicolon(t *testing.T) {
 	expected := testCsiSequence{
 		params:        [][]uint16{{4}, {0}},
