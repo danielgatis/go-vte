@@ -55,6 +55,7 @@ type Parser struct {
 	intermediateIdx int
 	params          *params
 	param           uint16
+	hasParam        bool
 	oscRaw          []byte
 	oscParams       [maxOscParams][2]int
 	oscNumParams    int
@@ -311,7 +312,7 @@ func (p *Parser) performAction(action, b byte) {
 	case CsiDispatchAction:
 		if p.params.IsFull() {
 			p.ignoring = true
-		} else {
+		} else if p.hasParam {
 			p.params.Push(p.param)
 		}
 
@@ -346,12 +347,18 @@ func (p *Parser) performAction(action, b byte) {
 		if b == ';' {
 			p.params.Push(p.param)
 			p.param = 0
+			// accept a 0 for the following param even if we don't see a
+			// number, since the semicolon makes it obvious that a value should
+			// be there.
+			p.hasParam = true
 		} else if b == ':' {
 			p.params.Extend(p.param)
 			p.param = 0
+			p.hasParam = false
 		} else {
 			p.param = smulu16(p.param, 10)
 			p.param = saddu16(p.param, uint16((b - '0')))
+			p.hasParam = true
 		}
 
 	case ClearAction:
@@ -359,6 +366,7 @@ func (p *Parser) performAction(action, b byte) {
 		p.intermediateIdx = 0
 		p.ignoring = false
 		p.param = 0
+		p.hasParam = false
 
 		p.params.Clear()
 
