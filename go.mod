@@ -1,9 +1,9 @@
 module github.com/danielgatis/go-vte
 
-go 1.21
+go 1.23
 
 require (
-	github.com/danielgatis/go-utf8 v1.0.0
+	github.com/danielgatis/go-utf8 v1.0.1
 	github.com/stretchr/testify v1.8.4
 )
 
