@@ -168,9 +168,13 @@ func TestOcsExceedMaxBufferSize(t *testing.T) {
 	inputStart := []byte{0x1b, ']', '5', '2', ';', 's'}
 	inputEnd := []byte{0x07}
 
+	// Buffer is limited to maxOscRaw total
+	// First param "52" uses 2 bytes, so second param gets maxOscRaw - 2 bytes
+	// We send 's' + numBytes 'a's, but only maxOscRaw - 2 bytes will be stored
+	maxSecondParam := maxOscRaw - 2 // 2 bytes for "52"
 	expected := testOscSequence{
 		params: [][]byte{
-			[]byte("52"), append([]byte{'s'}, bytes.Repeat([]byte{'a'}, numBytes)...),
+			[]byte("52"), append([]byte{'s'}, bytes.Repeat([]byte{'a'}, maxSecondParam-1)...),
 		},
 		bell: true,
 	}
@@ -190,6 +194,7 @@ func TestOcsExceedMaxBufferSize(t *testing.T) {
 	}
 
 	assert.Equal(t, 1, len(dispatcher.dispatched))
-	assert.Equal(t, len(expected.params[1]), numBytes+len(inputEnd))
+	seq := dispatcher.dispatched[0].(testOscSequence)
+	assert.Equal(t, maxSecondParam, len(seq.params[1]), "Second param should be limited")
 	assert.Equal(t, expected, dispatcher.dispatched[0])
 }

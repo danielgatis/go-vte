@@ -50,6 +50,9 @@ func (p *params) Clear() {
 
 // Push pushes a parameter.
 func (p *params) Push(param uint16) {
+	if p.len >= maxParams {
+		return
+	}
 	p.subparams[p.len-int(p.current_subparams)] = p.current_subparams + 1
 	p.params[p.len] = param
 	p.current_subparams = 0
@@ -58,6 +61,9 @@ func (p *params) Push(param uint16) {
 
 // Extend extends the last parameter.
 func (p *params) Extend(param uint16) {
+	if p.len >= maxParams {
+		return
+	}
 	p.subparams[p.len-int(p.current_subparams)] = p.current_subparams + 1
 	p.params[p.len] = param
 	p.current_subparams++

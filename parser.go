@@ -200,10 +200,24 @@ func (p *Parser) Params() [][]uint16 {
 // OscParams returns the osc params
 func (p *Parser) OscParams() [][]byte {
 	params := make([][]byte, 0, maxOscParams)
+	rawLen := len(p.oscRaw)
 
 	for i := 0; i < p.oscNumParams; i++ {
 		indices := p.oscParams[i]
-		param := p.oscRaw[indices[0]:indices[1]]
+		start, end := indices[0], indices[1]
+
+		// Bounds check to prevent panic
+		if start < 0 {
+			start = 0
+		}
+		if end > rawLen {
+			end = rawLen
+		}
+		if start > end {
+			start = end
+		}
+
+		param := p.oscRaw[start:end]
 		params = append(params, param)
 	}
 
@@ -280,7 +294,7 @@ func (p *Parser) performAction(action, b byte) {
 	case HookAction:
 		if p.params.IsFull() {
 			p.ignoring = true
-		} else {
+		} else if p.hasParam {
 			p.params.Push(p.param)
 		}
 
@@ -314,7 +328,7 @@ func (p *Parser) performAction(action, b byte) {
 				p.oscParams[paramIdx] = [2]int{begin, idx}
 			}
 			p.oscNumParams++
-		} else {
+		} else if len(p.oscRaw) < maxOscRaw {
 			p.oscRaw = append(p.oscRaw, b)
 		}
 
