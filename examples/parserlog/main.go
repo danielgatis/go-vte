@@ -45,6 +45,11 @@ func (p *performer) EscDispatch(intermediates []byte, ignore bool, b byte) {
 	fmt.Printf("[EscDispatch] intermediates=%v, ignore=%v, byte=%02x\n", intermediates, ignore, b)
 }
 
+func (p *performer) SosPmApcDispatch(kind vte.SosPmApcKind, data []byte, bellTerminated bool) {
+	kindName := []string{"SOS", "PM", "APC"}[kind]
+	fmt.Printf("[SosPmApcDispatch] kind=%s, data=%q, bellTerminated=%v\n", kindName, data, bellTerminated)
+}
+
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 	performer := &performer{}

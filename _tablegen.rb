@@ -19,6 +19,9 @@ action_names = [
   :Put,
   :Unhook,
   :BeginUtf8,
+  :SosPmApcStart,
+  :SosPmApcPut,
+  :SosPmApcEnd,
 ]
 
 state_names = [
@@ -76,9 +79,9 @@ states[:Escape] = {
   0x5b       => [:CsiEntry, :None],
   0x5d       => [:OscString, :None],
   0x50       => [:DcsEntry, :None],
-  0x58       => [:SosPmApcString, :None],
-  0x5e       => [:SosPmApcString, :None],
-  0x5f       => [:SosPmApcString, :None],
+  0x58       => [:SosPmApcString, :SosPmApcStart],  # SOS
+  0x5e       => [:SosPmApcString, :SosPmApcStart],  # PM
+  0x5f       => [:SosPmApcString, :SosPmApcStart],  # APC
 }
 
 states[:EscapeIntermediate] = {
@@ -185,11 +188,14 @@ states[:DcsPassthrough] = {
 }
 
 states[:SosPmApcString] = {
-  0x00..0x17 => [:Anywhere, :Ignore],
+  0x00..0x06 => [:Anywhere, :Ignore],
+  0x07       => [:Ground, :None],             # BEL terminator (Kitty compatibility)
+  0x08..0x17 => [:Anywhere, :Ignore],
+  # 0x18 (CAN), 0x1a (SUB), 0x1b (ESC) are handled by Anywhere state
+  # The exit action in performStateChange handles calling SosPmApcEnd
   0x19       => [:Anywhere, :Ignore],
   0x1c..0x1f => [:Anywhere, :Ignore],
-  0x20..0x7f => [:Anywhere, :Ignore],
-  0x9c       => [:Ground, :None],
+  0x20..0xff => [:Anywhere, :SosPmApcPut],     # Valid data bytes
 }
 
 states[:OscString] = {
@@ -241,7 +247,7 @@ if __FILE__ == $0
   template_path = File.read(File.expand_path("_table.go.erb", File.dirname(__FILE__)))
   out_path = File.expand_path("table.go", File.dirname(__FILE__))
 
-  renderer = ERB.new(template_path, nil, "-")
+  renderer = ERB.new(template_path, trim_mode: "-")
   output = renderer.result(binding)
 
   File.write(out_path, output)

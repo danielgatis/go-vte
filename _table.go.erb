@@ -19,14 +19,14 @@ var (
     <% end -%>
   }
 
-  stateTable = [][]byte{
+  stateTable = [][]uint16{
     <% table.each.with_index do |actions, i| -%>
       { //State <%= state_names[i] %>State = <%= i %>
         <% actions.each.with_index do |act, j| -%>
           <% if act == 0 -%>
             <%= act %>, // <%= "%02X" % j %>
           <% else -%>
-            <%= act[0]%>State | (<%= act[1]%>Action << 4), // <%= "%02X" % j %>
+            uint16(<%= act[0]%>State) | (uint16(<%= act[1]%>Action) << 8), // <%= "%02X" % j %>
           <% end -%>
         <% end -%>
       },

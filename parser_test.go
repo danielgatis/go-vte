@@ -53,6 +53,14 @@ type testDcsUnhookSequence struct{}
 
 func (testDcsUnhookSequence) sequence() {}
 
+type testSosPmApcSequence struct {
+	kind           SosPmApcKind
+	data           []byte
+	bellTerminated bool
+}
+
+func (testSosPmApcSequence) sequence() {}
+
 type testDispatcher struct {
 	dispatched []testSequence
 }
@@ -112,6 +120,15 @@ func (d *testDispatcher) Unhook() {
 	d.dispatched = append(d.dispatched, testDcsUnhookSequence{})
 }
 
+// SosPmApcDispatch implements Performer.
+func (d *testDispatcher) SosPmApcDispatch(kind SosPmApcKind, data []byte, bellTerminated bool) {
+	d.dispatched = append(d.dispatched, testSosPmApcSequence{
+		kind:           kind,
+		data:           data,
+		bellTerminated: bellTerminated,
+	})
+}
+
 func TestSaddu16(t *testing.T) {
 	assert.Equal(t, uint16(math.MaxUint16), saddu16(math.MaxUint16, 1))
 	assert.Equal(t, uint16(1), saddu16(1, 0))
@@ -142,6 +159,8 @@ func (p *benchDispatcher) CsiDispatch(params [][]uint16, intermediates []byte, i
 }
 
 func (p *benchDispatcher) EscDispatch(intermediates []byte, ignore bool, b byte) {}
+
+func (p *benchDispatcher) SosPmApcDispatch(kind SosPmApcKind, data []byte, bellTerminated bool) {}
 
 func BenchmarkNext(bm *testing.B) {
 	bytes, err := os.ReadFile("./fixtures/demo.vte")

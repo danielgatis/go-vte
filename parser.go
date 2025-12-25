@@ -21,6 +21,22 @@ const maxOscRaw = 1024
 // maxOscParams is the maximum number of osc parameters allowed.
 const maxOscParams = 16
 
+// maxSosPmApcRaw is the maximum number of bytes allowed in a SOS/PM/APC sequence.
+// Kitty Graphics Protocol chunks are up to 4KB.
+const maxSosPmApcRaw = 4096
+
+// SosPmApcKind represents the type of SOS/PM/APC sequence.
+type SosPmApcKind = byte
+
+const (
+	// SosKind indicates a Start of String sequence (ESC X).
+	SosKind SosPmApcKind = 0
+	// PmKind indicates a Privacy Message sequence (ESC ^).
+	PmKind SosPmApcKind = 1
+	// ApcKind indicates an Application Program Command sequence (ESC _).
+	ApcKind SosPmApcKind = 2
+)
+
 // Performer is an interface for parsing.
 type Performer interface {
 	// Print is called when a print action is performed.
@@ -46,6 +62,12 @@ type Performer interface {
 
 	// EscDispatch is called when an esc dispatch action is performed.
 	EscDispatch(intermediates []byte, ignore bool, b byte)
+
+	// SosPmApcDispatch is called when a SOS/PM/APC sequence is complete.
+	// kind indicates the type of sequence (SosKind, PmKind, or ApcKind).
+	// data contains the raw bytes of the sequence payload.
+	// bellTerminated is true if the sequence was terminated by BEL (0x07).
+	SosPmApcDispatch(kind SosPmApcKind, data []byte, bellTerminated bool)
 }
 
 // Parser represents a state machine.
@@ -61,6 +83,10 @@ type Parser struct {
 	oscNumParams    int
 	ignoring        bool
 	utf8Parser      *utf8.Parser
+
+	// SOS/PM/APC sequence state
+	sosPmApcKind SosPmApcKind
+	sosPmApcRaw  []byte
 
 	performer Performer
 }
@@ -113,6 +139,12 @@ func (p *Parser) esccb(intermediates []byte, ignore bool, b byte) {
 	}
 }
 
+func (p *Parser) sosPmApccb(kind SosPmApcKind, data []byte, bellTerminated bool) {
+	if p.performer != nil {
+		p.performer.SosPmApcDispatch(kind, data, bellTerminated)
+	}
+}
+
 func (p *Parser) setState(state State) {
 	p.state = state
 }
@@ -144,8 +176,8 @@ func (p *Parser) Advance(b byte) {
 			change = stateTable[p.state][b]
 		}
 
-		state := change & 0x0f
-		action := change >> 4
+		state := byte(change & 0xff)
+		action := byte(change >> 8)
 
 		p.performStateChange(state, action, b)
 	}
@@ -202,6 +234,8 @@ func (p *Parser) performStateChange(state, action, b byte) {
 			p.performAction(UnhookAction, b)
 		case OscStringState:
 			p.performAction(OscEndAction, b)
+		case SosPmApcStringState:
+			p.performAction(SosPmApcEndAction, b)
 		default:
 			break
 		}
@@ -372,6 +406,26 @@ func (p *Parser) performAction(action, b byte) {
 
 	case BeginUtf8Action:
 		p.processUtf8(b)
+
+	case SosPmApcStartAction:
+		// Determine the kind based on the escape sequence byte
+		switch b {
+		case 'X': // 0x58 - SOS
+			p.sosPmApcKind = SosKind
+		case '^': // 0x5E - PM
+			p.sosPmApcKind = PmKind
+		case '_': // 0x5F - APC
+			p.sosPmApcKind = ApcKind
+		}
+		p.sosPmApcRaw = make([]byte, 0, 128)
+
+	case SosPmApcPutAction:
+		if len(p.sosPmApcRaw) < maxSosPmApcRaw {
+			p.sosPmApcRaw = append(p.sosPmApcRaw, b)
+		}
+
+	case SosPmApcEndAction:
+		p.sosPmApccb(p.sosPmApcKind, p.sosPmApcRaw, b == 0x07)
 	}
 }
 
