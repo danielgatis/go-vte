@@ -21,9 +21,6 @@ const maxOscRaw = 1024
 // maxOscParams is the maximum number of osc parameters allowed.
 const maxOscParams = 16
 
-// maxSosPmApcRaw is the maximum number of bytes allowed in a SOS/PM/APC sequence.
-// Kitty Graphics Protocol chunks are up to 4KB.
-const maxSosPmApcRaw = 4096
 
 // SosPmApcKind represents the type of SOS/PM/APC sequence.
 type SosPmApcKind = byte
@@ -431,12 +428,10 @@ func (p *Parser) performAction(action, b byte) {
 		case '_': // 0x5F - APC
 			p.sosPmApcKind = ApcKind
 		}
-		p.sosPmApcRaw = make([]byte, 0, 128)
+		p.sosPmApcRaw = make([]byte, 0, 4096)
 
 	case SosPmApcPutAction:
-		if len(p.sosPmApcRaw) < maxSosPmApcRaw {
-			p.sosPmApcRaw = append(p.sosPmApcRaw, b)
-		}
+		p.sosPmApcRaw = append(p.sosPmApcRaw, b)
 
 	case SosPmApcEndAction:
 		p.sosPmApccb(p.sosPmApcKind, p.sosPmApcRaw, b == 0x07)
